@@ -1,0 +1,35 @@
+# 黄金样本：历史时区与夏令时 —— 设计文档 §6.1 C 组
+# utc_offset_min = 钟表时间 − UTC（分钟），用于验证 UTC 解算本身；
+# source 区分偏移来源："historical_table"（自维护历史表）或 "zoneinfo"。
+
+- name: 1988年夏_北京夏令时
+  place: 北京市
+  birth: "1988-07-15 10:00"
+  expect:
+    tz_used: "Asia/Shanghai"
+    is_dst: true
+    dst_offset_min: 60
+    utc_offset_min: 540            # UTC+9（夏令时），UTC = 当日 01:00
+
+- name: 1935年_兰州民国陇蜀时区
+  place: 甘肃省兰州市
+  birth: "1935-03-20 10:00"
+  expect:
+    source: "historical_table"   # tzdata 的 Asia/Chongqing 1935 段为 +8，不符民国陇蜀时区
+    utc_offset_min: 420          # 陇蜀时区中央经线 105°E → UTC+7
+    is_dst: false
+
+- name: 1900年_北京_zoneinfo兜底
+  place: 北京市
+  birth: "1900-06-15 10:00"
+  expect:
+    source: "zoneinfo"
+    tz_used: "Asia/Shanghai"
+    is_dst: false
+
+- name: 1990年_乌鲁木齐_不执行夏令时
+  place: 新疆乌鲁木齐市
+  birth: "1990-06-15 12:00"
+  expect:
+    is_dst: false
+    utc_offset_min: 480            # UTC = 钟表时间 − 8h（新疆不按夏令时拨快）

@@ -1,0 +1,46 @@
+# 黄金样本：真太阳时边界（A 组）+ 晚子时日界（B 组）—— 设计文档 §6.1
+#
+# 经度修正公式：(lon − 120°E) × 4 分钟/度
+# A 组断言 expect.lon_correction_min（容差 tolerance）；
+#   带 expect.true_solar_time 的条目另按 true_solar_time_tolerance_min 宽松比对；
+# B 组断言全链条（geo → tz → solar → day_boundary）输出的 expect.is_late_zi。
+
+# ---------- A 组：经度修正 ----------
+- name: 乌鲁木齐_北京时间上午_必然错位
+  place: 新疆乌鲁木齐市
+  birth: "1990-06-15 08:00"
+  tolerance: 0.1
+  expect:
+    lon_correction_min: -129.5            # (87.62 − 120) × 4 = −129.52
+    true_solar_time: "1990-06-15 05:52"   # 文档给定（约值）
+    true_solar_time_tolerance_min: 3
+
+- name: 成都_经度修正过半
+  place: 四川省成都市
+  birth: "1990-06-15 12:00"
+  tolerance: 0.1
+  expect:
+    lon_correction_min: -63.7             # (104.07 − 120) × 4 = −63.72
+
+- name: 上海_几乎无修正
+  place: 上海市
+  birth: "1990-06-15 12:00"
+  tolerance: 0.1
+  expect:
+    lon_correction_min: 5.9               # (121.47 − 120) × 4 = +5.88
+
+# ---------- B 组：晚子时边界（子初换日@真太阳时 23:00） ----------
+# 北京 lon=116.41，经度修正约 −14.4 分；1 月 15 日均时差约 −9.5 分。
+# 注意：不能用 6–9 月的日期——1990 年北京处于夏令时（钟表已拨快 1 小时），
+# 会先把钟表读数拉回 22 点，破坏样本意图。1 月无夏令时。
+- name: 北京_钟表23:30_真太阳时23点_晚子时
+  place: 北京市
+  birth: "1990-01-15 23:30"
+  expect:
+    is_late_zi: true                      # 真太阳时 ≈ 23:06 → 归次日
+
+- name: 北京_钟表22:30_真太阳时22点_非晚子时
+  place: 北京市
+  birth: "1990-01-15 22:30"
+  expect:
+    is_late_zi: false                     # 真太阳时 ≈ 22:06 → 当日

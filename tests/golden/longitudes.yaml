@@ -1,0 +1,44 @@
+# 黄金样本：经度修正梯度 —— lon_correction_min = (lon − 120) × 4 分钟
+# 覆盖 120°E 附近（≈0）、西部大负修正、东部正修正；lon 为城市表应有值（±0.1° 级，见 §4.1）。
+
+- name: 上海_几乎零修正
+  place: 上海市
+  lon: 121.47
+  birth: "1990-06-15 12:00"
+  expect_lon_correction_min: 5.88
+  tolerance: 0.1
+
+- name: 杭州_东经120度附近
+  place: 浙江省杭州市
+  lon: 120.16
+  birth: "1990-06-15 12:00"
+  expect_lon_correction_min: 0.64
+  tolerance: 0.1
+
+- name: 喀什_最西_负修正近三小时
+  place: 新疆喀什市
+  lon: 75.99
+  birth: "1990-06-15 12:00"
+  expect_lon_correction_min: -176.04      # ≈ −176 分
+  tolerance: 0.1
+
+- name: 哈尔滨_最东_正修正
+  place: 黑龙江省哈尔滨市
+  lon: 126.63
+  birth: "1990-06-15 12:00"
+  expect_lon_correction_min: 26.52        # ≈ +26.5 分
+  tolerance: 0.1
+
+- name: 成都_负修正过半时辰
+  place: 四川省成都市
+  lon: 104.07
+  birth: "1990-06-15 12:00"
+  expect_lon_correction_min: -63.72
+  tolerance: 0.1
+
+- name: 乌鲁木齐_负修正超两时辰
+  place: 新疆乌鲁木齐市
+  lon: 87.62
+  birth: "1990-06-15 12:00"
+  expect_lon_correction_min: -129.52
+  tolerance: 0.1

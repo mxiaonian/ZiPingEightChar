@@ -1,0 +1,9 @@
+[project]
+name = "ZiPingEightChar"
+version = "0.1.0"
+requires-python = ">=3.10"        # zoneinfo 需 3.9+，dataclass 语法需 3.10
+dependencies = [
+    "tyme4py==1.5.0",             # 精确锁定：历表数据跨版本会变，锁版本 = 锁可复现性
+    "tzdata>=2024.1",             # 跨平台的 IANA 时区数据兜底
+    "pyyaml>=6.0",                # 规则文件 / 黄金样本（tests/golden/*.yaml）
+]
