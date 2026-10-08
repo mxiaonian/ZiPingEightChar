@@ -42,11 +42,17 @@ def _hidden(me, earth_branch) -> list:
     return items
 
 
-def _shen_sha(solar: SolarTime) -> list:
-    try:
-        return [g.get_name() for g in solar.get_lunar_hour().get_lunar_day().get_gods()]
-    except Exception:
-        return []
+def _shen_sha(ganzhi: dict, gender: str) -> dict:
+    """子平通行神煞（查法见 chart/shensha.py 与 rules/94_神煞细节.md）。"""
+    from chart.shensha import evaluate_natal, STAR_ORDER
+
+    raw = evaluate_natal(ganzhi, gender)
+    order = {name: i for i, name in enumerate(STAR_ORDER)}
+    return {
+        key: [f"{star}（{note}）"
+              for star, note in sorted(entries, key=lambda e: order[e[0]])]
+        for key, entries in raw.items()
+    }
 
 
 def cast(cast_dt: datetime, gender: str) -> dict:
@@ -59,9 +65,12 @@ def cast(cast_dt: datetime, gender: str) -> dict:
 
     prev_jie, next_jie = _jie_bounds(cast_dt)
 
+    base = {k: {"gan": p.get_heaven_stem().get_name(),
+                "zhi": p.get_earth_branch().get_name()} for k, p in pillars.items()}
+    ganzhi = {k: v["gan"] + v["zhi"] for k, v in base.items()}
+
     return {
-        **{k: {"gan": p.get_heaven_stem().get_name(),
-               "zhi": p.get_earth_branch().get_name()} for k, p in pillars.items()},
+        **base,
         "day_master": me.get_name(),
         "ten_god": {k: me.get_ten_star(pillars[k].get_heaven_stem()).get_name()
                     for k in ("year", "month", "hour")},
@@ -71,7 +80,7 @@ def cast(cast_dt: datetime, gender: str) -> dict:
         "na_yin": {k: pillars[k].get_sound().get_name() for k in _PILLARS},
         "void": {k: "".join(b.get_name() for b in pillars[k].get_extra_earth_branches())
                  for k in ("day", "hour")},
-        "shen_sha": _shen_sha(solar),
+        "shen_sha": _shen_sha(ganzhi, gender),
         "prev_jie": {"name": prev_jie[0].get_name(), "time": prev_jie[1]},
         "next_jie": {"name": next_jie[0].get_name(), "time": next_jie[1]},
         "tai_yuan": ec.get_fetal_origin().get_name(),

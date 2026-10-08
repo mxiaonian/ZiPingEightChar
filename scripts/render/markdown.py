@@ -20,6 +20,8 @@ def render(chart) -> str:
             "已按「子初换日」归入次日。另存「子正换日」一派，"
             "日柱与时柱将不同，结论需谨慎。"
         )
+    if chart.jie_gap_warning:
+        L.append(f"- {chart.jie_gap_warning}")
     L.append("")
 
     L.append("## 四柱")
@@ -63,11 +65,23 @@ def render(chart) -> str:
 
     L.append("## 神煞")
     L.append("")
-    if chart.shen_sha:
-        for s in chart.shen_sha:
+    for key, label in (("year", "年柱"), ("month", "月柱"),
+                       ("day", "日柱"), ("hour", "时柱")):
+        L.append(f"### {label}神煞")
+        entries = chart.shen_sha.get(key) or []
+        if entries:
+            for s in entries:
+                L.append(f"- {s}")
+        else:
+            L.append("- （无）")
+        L.append("")
+    L.append("### 四柱组合")
+    combo = chart.shen_sha.get("combo") or []
+    if combo:
+        for s in combo:
             L.append(f"- {s}")
     else:
-        L.append("- （本造未取神煞）")
+        L.append("- （无）")
     L.append("")
 
     L.append("## 节令")
@@ -90,10 +104,20 @@ def render(chart) -> str:
                  f"（{lp.start_age:.2f} 岁起，{lp.start_year} 年）")
     L.append("")
 
+    L.append("## 小运")
+    L.append("")
+    if chart.childhood_luck:
+        L.append("- 自时柱起，一位一岁；童限（未交大运）参用")
+        for age, year, gz in chart.childhood_luck:
+            L.append(f"- {age} 岁（{year} 年）：{gz}")
+    else:
+        L.append("- （无：起运不足一岁）")
+    L.append("")
+
     L.append("## 流年")
     L.append("")
-    for year, gz in chart.flow_years:
-        L.append(f"- {year} {gz}")
+    for year, gz, label in chart.flow_years:
+        L.append(f"- {year} {gz}（{label}）")
     L.append("")
 
     L.append("## 流月")

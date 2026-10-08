@@ -114,9 +114,43 @@ def decade_pillars(
     return pillars
 
 
-def flow_years(current_year: int, n: int = 10) -> list[tuple[int, str]]:
-    """从今年起 n 个流年干支。"""
-    return [(y, ganzhi_of_year(y)) for y in range(current_year, current_year + n)]
+def flow_years(birth_year: int, current_year: int, n: int = 10) -> list[tuple[int, str]]:
+    """出生年至今 +n 个流年干支（回溯断运需要过往流年）。"""
+    return [(y, ganzhi_of_year(y)) for y in range(birth_year, current_year + n)]
+
+
+def childhood_luck(
+    hour_gan: str,
+    hour_zhi: str,
+    forward: bool,
+    start_age_years: float,
+    birth_year: int,
+) -> list[tuple[int, int, str]]:
+    """小运（童限）：自时柱起，一位一岁，顺逆与大运同（阳男阴女顺、阴男阳女逆）。
+
+    覆盖虚岁 1 岁至起运前；起运不足一岁者返回空表。
+    返回 (虚岁, 公元年, 干支)。
+    """
+    step = 1 if forward else -1
+    last_age = int(start_age_years)
+    out = []
+    for age in range(1, last_age + 1):
+        gan, zhi = ganzhi_cycle_next(hour_gan, hour_zhi, step * age)
+        out.append((age, birth_year + age - 1, gan + zhi))
+    return out
+
+
+def luck_label_for_year(year: int, luck_pillars: list[LuckPillar]) -> str:
+    """该流年所属区间标签（按起运整数年归属）：童限 / 某运干支 / 交运年。"""
+    if not luck_pillars or year < luck_pillars[0].start_year:
+        return "童限"
+    label = f"{luck_pillars[0].gan}{luck_pillars[0].zhi}运"
+    for lp in luck_pillars:
+        if year >= lp.start_year:
+            label = f"{lp.gan}{lp.zhi}运"
+            if year == lp.start_year:
+                label = f"交运年·入{lp.gan}{lp.zhi}运"
+    return label
 
 
 def flow_months(year: int) -> list[tuple[str, str]]:

@@ -54,7 +54,8 @@ def main() -> int:
         from astro.day_boundary import resolve_calendar_day
         from chart.tyme_adapter import cast
         from chart.luck import (
-            compute_luck, decade_pillars, flow_months, flow_years, is_forward,
+            childhood_luck, compute_luck, decade_pillars, flow_months,
+            flow_years, is_forward, luck_label_for_year,
         )
         from chart.model import build_chart_data
         from render.markdown import render
@@ -89,7 +90,7 @@ def main() -> int:
         # L1-a 排盘（tyme4py 唯一接触面）
         raw = cast(cast_dt, a.gender)
 
-        # L1-b 起运、大运、流年、流月
+        # L1-b 起运、大运、流年、流月、小运
         forward = is_forward(a.gender, raw["year"]["gan"])
         luck = compute_luck(
             birth_tst=tst,
@@ -97,20 +98,32 @@ def main() -> int:
             next_jie_time=raw["next_jie"]["time"],
             forward=forward,
         )
+        this_year = datetime.now().year
+        # 大运步数须覆盖流年末端（默认 8 步；年长者自动加步）
+        n_pillars = max(
+            8,
+            int((this_year + 9 - cast_dt.year - luck["start_age_years"]) / 10) + 2,
+        )
         decade = decade_pillars(
             raw["month"]["gan"], raw["month"]["zhi"], forward,
+            luck["start_age_years"], cast_dt.year, n=n_pillars,
+        )
+        years = [
+            (y, gz, luck_label_for_year(y, decade))
+            for y, gz in flow_years(cast_dt.year, this_year, 10)
+        ]
+        months = flow_months(this_year)
+        childhood = childhood_luck(
+            raw["hour"]["gan"], raw["hour"]["zhi"], forward,
             luck["start_age_years"], cast_dt.year,
         )
-        this_year = datetime.now().year
-        years = flow_years(this_year, 10)
-        months = flow_months(this_year)
 
         # L1-c 组装 ChartData
         chart = build_chart_data(
             name=a.name, gender=a.gender, place=a.place, clock=a.birth,
             loc=loc, tz_audit=tz_audit, st_audit=st_audit, bd_audit=bd_audit,
             raw=raw, luck=luck, luck_pillars=decade,
-            flow_years=years, flow_months=months,
+            flow_years=years, flow_months=months, childhood_luck=childhood,
         )
 
         # L2 渲染：stdout 只出 Markdown

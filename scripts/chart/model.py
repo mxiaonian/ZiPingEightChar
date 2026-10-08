@@ -60,15 +60,17 @@ class ChartData:
     start_age_text: str = ""             # 起运年龄，如「7 岁 7 个月 19 天」
     terrain: dict[str, str] = field(default_factory=dict)   # 四柱键 → 十二长生
     void: dict[str, str] = field(default_factory=dict)      # {"day": .., "hour": ..}
-    shen_sha: list[str] = field(default_factory=list)       # 神煞
-    flow_years: list[tuple[int, str]] = field(default_factory=list)   # 流年 (年份, 干支)
+    shen_sha: dict[str, list[str]] = field(default_factory=dict)  # 神煞：year/month/day/hour/combo → 条目
+    flow_years: list[tuple[int, str, str]] = field(default_factory=list)   # 流年 (年份, 干支, 所属大运标签)
     flow_months: list[tuple[str, str]] = field(default_factory=list)  # 流月 (标签, 干支)
+    childhood_luck: list[tuple[int, int, str]] = field(default_factory=list)  # 小运 (虚岁, 公元年, 干支)
     tai_yuan: str = ""                   # 胎元
     ming_gong: str = ""                  # 命宫
+    jie_gap_warning: str = ""            # 节气边界提示（空串 = 无）
 
     # —— 溯源 ——
     library_version: str = ""    # tyme4py 版本，写入输出
-    schema_version: str = "1.0"
+    schema_version: str = "1.2"
 
 
 def _fmt_dt(dt: datetime) -> str:
@@ -93,6 +95,19 @@ def _build_pillar(key: str, raw: dict) -> Pillar:
     )
 
 
+def _jie_gap_warning(tst: datetime, prev_jie: dict, next_jie: dict,
+                     threshold_hours: float = 12.0) -> str:
+    """出生真太阳时距交节不足 threshold_hours 时给出月令敏感性提示（空串 = 不提示）。"""
+    for term in (prev_jie, next_jie):
+        gap_h = abs((tst - term["time"]).total_seconds()) / 3600
+        if gap_h < threshold_hours:
+            flip = "前一月" if tst >= term["time"] else "后一月"
+            return (f"⚠️ 节气边界：出生距 {term['name']}（{_fmt_dt(term['time'])}）"
+                    f"仅 {gap_h:.1f} 小时；若出生记录误差超过此值，"
+                    f"月令将变为{flip}，四柱面目全变")
+    return ""
+
+
 def build_chart_data(
     name: str,
     gender: str,
@@ -105,8 +120,9 @@ def build_chart_data(
     raw: dict,
     luck: dict,
     luck_pillars: list[LuckPillar],
-    flow_years: list[tuple[int, str]],
+    flow_years: list[tuple[int, str, str]],
     flow_months: list[tuple[str, str]],
+    childhood_luck: list[tuple[int, int, str]],
 ) -> ChartData:
     """把 tyme_adapter 的原始 dict、各层 audit 与 luck 结果组装成 ChartData。
 
@@ -141,11 +157,14 @@ def build_chart_data(
         start_age_text=luck["start_age_text"],
         terrain=raw.get("terrain", {}),
         void=raw.get("void", {}),
-        shen_sha=raw.get("shen_sha", []),
+        shen_sha=raw.get("shen_sha", {}),
         flow_years=flow_years,
         flow_months=flow_months,
+        childhood_luck=childhood_luck,
         tai_yuan=raw.get("tai_yuan", ""),
         ming_gong=raw.get("ming_gong", ""),
+        jie_gap_warning=_jie_gap_warning(
+            st_audit["tst"], raw["prev_jie"], raw["next_jie"]),
         # 溯源
         library_version=raw.get("library_version", ""),
     )
