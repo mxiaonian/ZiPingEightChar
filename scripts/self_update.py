@@ -29,9 +29,8 @@ from pathlib import Path
 # ---- 远端配置（GitHub 优先，Gitea 兜底）----
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/mxiaonian/ZiPingEightChar/main/VERSION"
 GITHUB_ZIPBALL_URL = "https://codeload.github.com/mxiaonian/ZiPingEightChar/zip/refs/heads/main"
-# Gitea 占位地址：由授权方填写实际自建 Gitea 地址后启用
-GITEA_VERSION_URL = "https://gitea.example.com/owner/ZiPingEightChar/raw/branch/main/VERSION"
-GITEA_ZIPBALL_URL = "https://gitea.example.com/owner/ZiPingEightChar/archive/main.zip"
+GITEA_VERSION_URL = "https://git.lingyaomiaojie.com/moxiaonian/ZiPingEightChar/raw/branch/main/VERSION"
+GITEA_ZIPBALL_URL = "https://git.lingyaomiaojie.com/moxiaonian/ZiPingEightChar/archive/main.zip"
 
 CACHE_REL = "data/.update_check.json"
 CACHE_TTL_SECONDS = 24 * 3600

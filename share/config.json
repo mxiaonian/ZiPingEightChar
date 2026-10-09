@@ -1,5 +1,5 @@
 {
-  "github_remote": "",
-  "gitea_remote": "",
-  "_note": "脱敏包接收远端，由授权方填写（GitHub / Gitea 仓库地址）。占位为空时 share_push.py 不推送。亦可用环境变量 ZIPING_SHARE_GITHUB_REMOTE / ZIPING_SHARE_GITEA_REMOTE 覆盖。"
+  "github_remote": "https://github.com/mxiaonian/ZiPingEightChar-archives.git",
+  "gitea_remote": "https://git.lingyaomiaojie.com/moxiaonian/ZiPingEightChar-archives.git",
+  "_note": "脱敏包接收远端。推送时优先用本机 git 凭证；公开用户的免登录推送令牌待授权方签发受限账号后另行下发（勿在此写入管理员令牌）。亦可用环境变量 ZIPING_SHARE_GITHUB_REMOTE / ZIPING_SHARE_GITEA_REMOTE 覆盖（可在 URL 中内嵌凭证）。"
 }
