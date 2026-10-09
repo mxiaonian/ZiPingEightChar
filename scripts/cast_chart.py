@@ -129,6 +129,18 @@ def main() -> int:
         # L2 渲染：stdout 只出 Markdown
         print(render(chart))
         _gate.consume(Path(__file__).resolve().parents[1])
+
+        # 自更新提示：只读本地缓存往 stderr 打一行；缓存过期则后台线程刷新，
+        # 主流程不等它（用当次缓存）。任何异常静默，绝不影响 stdout 命盘契约。
+        try:
+            import self_update as _su
+            _root = Path(__file__).resolve().parents[1]
+            _msg = _su.notify_message(_root)
+            if _msg:
+                print(_msg, file=sys.stderr)
+            _su.refresh_cache_async(_root)
+        except Exception:
+            pass
         return 0
     except Exception:
         print("ERROR: 排盘内部错误。请把以下信息原样报告给用户，"

@@ -66,9 +66,10 @@ python scripts/query_shensha.py --gender 女 \
 
 本技能归**四川灵爻妙解文化传播有限公司**所有，以**测试授权**方式分发，条款见 `LICENSE.md`：禁止商业用途、禁止个人传播、保留法律追责途径。
 
-- **水印指纹**：定制副本在 `SKILL.md`、`rules/` 各文件、`scripts/cast_chart.py` 与授权状态文件中嵌入唯一副本编号（形如 `LY-20261007-A3F9`），副本泄露可按编号溯源。
-- **软锁**：定制副本含 `data/.license.json`，排盘脚本按授权次数与有效期放行；用尽、到期或授权文件被改动时退出码 4。总开关为 `scripts/_license_gate.py` 顶部 `_ENABLED` 一行变量——软锁防君子不防小人，是授权边界的可见表达，真正约束以 `LICENSE.md` 为准。
-- **母版与副本**：技能开发目录为母版（无授权状态文件，不锁）。分发副本由授权方一侧的 `tools/make_license_copy.py` 生成：`python tools/make_license_copy.py --licensee 张三 --uses 20 --expires 2027-12-31 --out <目标目录>`；该工具不随副本分发。
+- **公众版（首启签发个人副本）**：公众版不带授权状态文件，只带标记 `data/.public_edition.json`；首次排盘时由 `scripts/_license_gate.py` 就地签发个人副本——**初始 20 次、不限期**，授权对象 `public-personal`，个人副本编号此时生成。之后与定制副本同样校验。**推送脱敏档案每盘 +10 次，同一盘只计一次**（见「档案共建（share/）」节）。
+- **水印指纹**：副本在 `SKILL.md`、`rules/` 各文件、`scripts/cast_chart.py` 与授权状态文件中嵌入唯一副本编号（定制副本形如 `LY-20261007-A3F9`，公众版为池编号形如 `LY-20261009-PUB0`），副本泄露可按编号溯源。
+- **软锁**：授权副本含 `data/.license.json`，排盘脚本按授权次数与有效期放行；用尽、到期或授权文件被改动时退出码 4。总开关为 `scripts/_license_gate.py` 顶部 `_ENABLED` 一行变量——软锁防君子不防小人，是授权边界的可见表达，真正约束以 `LICENSE.md` 为准。
+- **母版与副本**：技能开发目录为母版（无授权状态文件、无公众版标记，不锁）。分发副本由授权方一侧的 `tools/make_license_copy.py` 生成：定制副本 `python tools/make_license_copy.py --licensee 张三 --uses 20 --expires 2027-12-31 --out <目标目录>`；公众版 `python tools/make_license_copy.py --public-edition --out <目标目录>`。该工具不随副本分发。
 
 ## 输出契约（v1.2，章节标题冻结）
 
@@ -181,7 +182,21 @@ stdout 的 Markdown 依次包含以下章节。标题是解释规则的定位锚
   `python scripts/memory_lookup.py --birth "1990-05-14 08:30" --place "四川省成都市" --gender 男`
   （亦可按 `--name` / `--pillars "丁亥 乙巳 庚子 辛巳"` 任意组合检索）。有档则读档延续——此前的归纳、已核实/已证伪反馈在分析推理时直接参用，已证伪的断法不得再断；无档则正常排盘解释，解释完成后用 `python scripts/memory_save.py --name ... --gender ... --birth ... --place ...` 建档（建档即一次排盘，授权副本照常扣次）。
 - **回写纪律**：用户核对或澄清了任何断语后，当轮把结果写回该档案的 `## 反馈与澄清` 小节，每条以状态标签开头——推测性归纳标【未核实】，命主确认改【已核实】，被否改【已证伪】并补一句实际情况；结构性结论同步更新 `## 归纳` 各行。
-- **隐私**：档案属命主个人信息，只存本机、不随授权副本分发、不进 share；不得把档案原文外发（不粘贴到外部对话、不上传网络、不写入其他文件）。
+- **隐私**：档案属命主个人信息，只存本机、不随授权副本分发、档案原文不进 share；不得把档案原文外发（不粘贴到外部对话、不上传网络、不写入其他文件）。回传授权方的只有按下节规格生成的结构化脱敏包，且必须经用户授权。
+
+## 档案共建（share/）
+
+用户可自愿把**脱敏后**的命盘数据回传授权方，用于技能优化与规则蒸馏（脱敏规格、隐私协议与撤回方式见 `share/README.md`）。每成功推送一盘，本副本授权次数 **+10**；同一盘（按盘 hash）只计一次，不重复加次。
+
+- **导出**：`python scripts/share_export.py --archive <档案路径>`（或按 `--birth/--place/--gender` 检索定位），生成结构化 JSON 脱敏包到 `share/pending/<盘hash>.json`。完整度门槛：性别/四柱/大运齐全 + 至少一条反馈事件（任意核实状态），不满足则拒绝导出（退出码 2）。**未核实推测不得入包**：归纳小节的推测性结论一律不导出；反馈事件（带核实状态标签）可入包，自由文本（反馈原文、盘面细节、归纳文字）一律不入。
+- **授权询问（强制）**：推送前必须先把脱敏包**全文展示**给用户，并询问是否授权推送——用户同意才执行推送；不同意则取消，脱敏包保留在 `share/pending/`（用户可随时删除），不影响技能正常使用。
+- **推送**：`python scripts/share_push.py`，把 `share/pending/` 的包推送到 `share/config.json` 配置的共建远端（GitHub / Gitea 逐个尝试，至少一个成功即算成功；远端地址由授权方填写）。推送成功后包移入 `share/pushed/`，并告知用户新增授权次数（+10；该盘已计励过则不重复加）。推送失败（无 git / 无网络 / 远端不可达）保留 pending，不丢数据。
+
+## 版本与自更新
+
+- **版本基准**：仓库根 `VERSION` 文件（如 `3.5.0`）+ `manifest.json`（全部文件 SHA256 清单，发布时由 `tools/build_manifest.py` 生成）。
+- **更新提示（缓存制、不打扰排盘）**：每次排盘成功后，若本地缓存的检查结果已过期（24 小时）则后台线程拉一次远端 VERSION 刷新缓存（超时 3 秒、失败静默，主流程不等）；缓存显示有新版本时，stderr 提示一行「技能有新版本 X.Y.Z，运行 `python scripts/self_update.py --apply` 可更新」。
+- **应用更新（须用户同意）**：用户说「更新技能」时再运行 `python scripts/self_update.py --apply`——从 GitHub 拉取（失败转 Gitea），**先按 manifest.json 逐文件校验 SHA256、任一不符即中止不动本地**，通过后覆盖更新；`data/.license.json`、`memory/archives/`、`share/pending/`、`share/pushed/`、`.git` 保留不动。不得替用户自动执行 --apply。
 
 ## 文风与反 AI 腔（强制）
 

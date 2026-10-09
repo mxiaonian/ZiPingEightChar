@@ -4,9 +4,13 @@
 本锁只是授权边界的可见表达，真正的约束在 LICENSE.md 的法律条款——
 绕过、篡改、移除软锁或水印，即构成对授权的违反。
 
-母版（技能开发目录）无 `data/.license.json`，本模块全部放行；
+母版（技能开发目录）无 `data/.license.json` 且无公众版标记，本模块全部放行；
 由 `tools/make_license_copy.py` 生成的定制副本带该状态文件，
 按剩余次数与到期日限制使用，并以签名防止手工篡改状态文件。
+
+公众版副本（`tools/make_license_copy.py --public-edition`）不带授权状态文件，
+只带标记 `data/.public_edition.json`；首次 check 时就地签发个人副本
+（初始 20 次、不限期、授权对象 public-personal），之后按定制副本同样校验。
 
 退出码 4 = 授权不可用（次数用尽 / 已过期 / 状态文件被篡改）。
 """
@@ -14,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import secrets
 from datetime import date
 from pathlib import Path
 
@@ -22,6 +27,11 @@ _ENABLED = True  # 软锁总开关：False = 完全放行
 _SALT = "lingyao-miaojie-ziping-eightchar"
 _COMPANY = "四川灵爻妙解文化传播有限公司"
 STATE_REL = Path("data") / ".license.json"
+PUBLIC_MARKER_REL = Path("data") / ".public_edition.json"
+
+# 公众版首启签发的个人副本参数
+PUBLIC_LICENSEE = "public-personal"
+PUBLIC_INITIAL_USES = 20
 
 
 def _state_path(root: Path) -> Path:
@@ -55,13 +65,28 @@ def _deny(reason: str, st: dict) -> str:
             f"如需续期或正式授权，请联系{_COMPANY}。")
 
 
+def _issue_public_personal(root: Path) -> None:
+    """公众版首启：就地签发个人副本（初始 20 次、不限期）。"""
+    write_state(root,
+                copy_id=f"LY-{date.today():%Y%m%d}-{secrets.token_hex(2).upper()}",
+                licensee=PUBLIC_LICENSEE,
+                max_uses=PUBLIC_INITIAL_USES,
+                expires_at=None)
+
+
 def check(root: Path) -> str | None:
     """返回 None 表示放行；返回字符串表示拒跑原因（由调用方打印到 stderr，退出码 4）。"""
     if not _ENABLED:
         return None
     st = _load(root)
     if st is None:
-        return None  # 母版无状态文件，不锁
+        if (root / PUBLIC_MARKER_REL).is_file():
+            _issue_public_personal(root)  # 公众版首启：就地签发个人副本
+            st = _load(root)
+        else:
+            return None  # 母版无状态文件，不锁
+    if st is None:  # 签发失败（如磁盘只读）按母版放行，不阻断使用
+        return None
     if st.get("sig") != _sig(st):
         return _deny("授权状态校验失败（授权文件被改动过）", st)
     exp = st.get("expires_at")
@@ -95,9 +120,35 @@ def write_state(root: Path, *, copy_id: str, licensee: str,
         "expires_at": expires_at,
         "max_uses": max_uses,
         "remaining_uses": max_uses,
+        "granted_archives": [],
     }
     st["sig"] = _sig(st)
     p = _state_path(root)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(st, ensure_ascii=False, indent=2), encoding="utf-8")
     return st
+
+
+def grant_uses(root: Path, n: int, archive_hash: str) -> bool:
+    """脱敏档案共建的计励：推送成功后给本副本加 n 次。
+
+    同一盘（archive_hash）只计一次：已在已计励列表中则返回 False 且不加次。
+    母版（无授权状态文件）不计励，直接返回 True。
+    状态文件签名校验失败（被篡改）时拒绝计励，返回 False。
+    """
+    if not _ENABLED:
+        return True
+    st = _load(root)
+    if st is None:
+        return True  # 母版无锁，不计
+    if st.get("sig") != _sig(st):
+        return False
+    granted = st.setdefault("granted_archives", [])
+    if archive_hash in granted:
+        return False
+    st["remaining_uses"] = int(st.get("remaining_uses", 0)) + int(n)
+    granted.append(archive_hash)
+    st["sig"] = _sig(st)
+    _state_path(root).write_text(
+        json.dumps(st, ensure_ascii=False, indent=2), encoding="utf-8")
+    return True

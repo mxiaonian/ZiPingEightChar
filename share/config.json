@@ -1,0 +1,5 @@
+{
+  "github_remote": "",
+  "gitea_remote": "",
+  "_note": "脱敏包接收远端，由授权方填写（GitHub / Gitea 仓库地址）。占位为空时 share_push.py 不推送。亦可用环境变量 ZIPING_SHARE_GITHUB_REMOTE / ZIPING_SHARE_GITEA_REMOTE 覆盖。"
+}
