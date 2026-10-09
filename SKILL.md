@@ -18,6 +18,13 @@ python scripts/cast_chart.py --name 张三 --gender 男 \
 
 成功时命盘 Markdown 打印到 stdout，退出码 0。诊断信息只走 stderr。
 
+可选：加 `--html` 同步生成 HTML 盘面图（`--html 路径.html` 指定输出，省略路径则写 `./命盘_<姓名>.html`；生成路径打在 stderr）：
+
+```bash
+python scripts/cast_chart.py --name 张三 --gender 男 \
+    --birth "1990-05-14 08:30" --place "四川省成都市" --html
+```
+
 另配岁运神煞查询工具（本命神煞已列于命盘 `## 神煞`，此工具查某流年/流月/大运/流日干支相对本命所逢之神煞）：
 
 ```bash
@@ -197,6 +204,13 @@ stdout 的 Markdown 依次包含以下章节。标题是解释规则的定位锚
 - **版本基准**：仓库根 `VERSION` 文件（如 `3.5.0`）+ `manifest.json`（全部文件 SHA256 清单，发布时由 `tools/build_manifest.py` 生成）。
 - **更新提示（缓存制、不打扰排盘）**：每次排盘成功后，若本地缓存的检查结果已过期（24 小时）则后台线程拉一次远端 VERSION 刷新缓存（超时 3 秒、失败静默，主流程不等）；缓存显示有新版本时，stderr 提示一行「技能有新版本 X.Y.Z，运行 `python scripts/self_update.py --apply` 可更新」。
 - **应用更新（须用户同意）**：用户说「更新技能」时再运行 `python scripts/self_update.py --apply`——从 GitHub 拉取（失败转 Gitea），**先按 manifest.json 逐文件校验 SHA256、任一不符即中止不动本地**，通过后覆盖更新；`data/.license.json`、`memory/archives/`、`share/pending/`、`share/pushed/`、`.git` 保留不动。不得替用户自动执行 --apply。
+
+## 盘面图（HTML）
+
+排盘后同步生成 HTML 盘面图（`cast_chart.py --html`）：四柱主表（当前大运与流年并列对照）、大运/小运条、全量流年、当年流月，五行配色、空亡标虚线、节气边界与晚子时出警示条。模板在 `scripts/render/templates/paipan.html`，样式可直接改。
+
+- **给用户看图**：agent 环境具备浏览器/发图能力时，排盘后生成 HTML 并直接打开，或截图发送给用户；纯文本环境则告知文件路径。
+- HTML 只是 Markdown 命盘的图形化重渲染，内容以 stdout 命盘为准；解释时引用的字段名仍以 Markdown 章节为准。
 
 ## 文风与反 AI 腔（强制）
 

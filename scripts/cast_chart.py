@@ -37,6 +37,8 @@ def main() -> int:
                     help='出生时刻（当地钟表时间），格式 "YYYY-MM-DD HH:MM"，时刻必需')
     ap.add_argument("--place", required=True,
                     help="出生地，精确到地级市一级，如「四川省成都市」")
+    ap.add_argument("--html", nargs="?", const="", default=None,
+                    help="可选：同时生成 HTML 盘面图（给路径参数，或省略则写 ./命盘_<姓名>.html）")
     a = ap.parse_args()
 
     # 软授权锁：定制副本（含 data/.license.json）按授权次数/期限放行；母版无状态文件直接放行
@@ -129,6 +131,17 @@ def main() -> int:
         # L2 渲染：stdout 只出 Markdown
         print(render(chart))
         _gate.consume(Path(__file__).resolve().parents[1])
+
+        # 可选：同步生成 HTML 盘面图（渲染失败不影响 stdout 契约）
+        if a.html is not None:
+            try:
+                from render.html import build_html
+                html_path = (Path(a.html) if a.html
+                             else Path(f"命盘_{a.name}.html"))
+                html_path.write_text(build_html(chart), encoding="utf-8")
+                print(f"HTML 盘面：{html_path.resolve()}", file=sys.stderr)
+            except Exception:
+                print("WARN: HTML 盘面生成失败（命盘不受影响）", file=sys.stderr)
 
         # 自更新提示：只读本地缓存往 stderr 打一行；缓存过期则后台线程刷新，
         # 主流程不等它（用当次缓存）。任何异常静默，绝不影响 stdout 命盘契约。

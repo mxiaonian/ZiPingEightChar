@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+  :root {
+    --ink: #2b2b2b; --muted: #8a8577; --line: #e6dfd2; --bg: #f7f4ee;
+    --card: #fffdf8; --accent: #b08d2f;
+    --wx-mu: #2e7d32; --wx-huo: #c62828; --wx-tu: #8d6e63;
+    --wx-jin: #af8c2c; --wx-shui: #1565c0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .page { max-width: 980px; margin: 0 auto; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(60, 50, 30, .06);
+  }
+  /* 头部 */
+  .head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .name { font-size: 28px; font-weight: 700; font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
+  .chip {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    border: 1px solid var(--accent); color: var(--accent); font-size: 13px;
+  }
+  .meta { color: var(--muted); font-size: 13px; line-height: 1.9; }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .warn {
+    margin-top: 6px; padding: 6px 10px; border-radius: 8px;
+    background: #fdf3e3; border: 1px solid #ecd9ae; color: #8a6d1d; font-size: 12.5px;
+  }
+  /* 主排盘表 */
+  table.pan { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .pan th, .pan td {
+    border: 1px solid var(--line); text-align: center;
+    padding: 6px 4px; vertical-align: middle; font-size: 14px;
+  }
+  .pan th { background: #f3eee2; color: #6b6455; font-weight: 600; }
+  .pan td.rowlabel { background: #f3eee2; color: #6b6455; font-size: 13px; width: 64px; }
+  .gz { font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; font-size: 34px; line-height: 1.25; }
+  .god { font-size: 12.5px; color: #7a7264; }
+  .god.day { color: var(--accent); font-weight: 600; }
+  .hidden { font-size: 12.5px; line-height: 1.7; color: #57503f; }
+  .hidden .hg { font-weight: 600; }
+  .small { font-size: 12.5px; color: #57503f; line-height: 1.7; }
+  .voidz { border-bottom: 2px dashed #c0392b; padding-bottom: 1px; }
+  .cur { background: #fdf6e0; }
+  .curtag { display:block; font-size: 11px; color: var(--accent); }
+  .wx-mu { color: var(--wx-mu); } .wx-huo { color: var(--wx-huo); }
+  .wx-tu { color: var(--wx-tu); } .wx-jin { color: var(--wx-jin); }
+  .wx-shui { color: var(--wx-shui); }
+  /* 条带 */
+  .sect { font-size: 15px; font-weight: 700; margin: 2px 0 10px;
+          font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
+  .sect .note { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .strip { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cell {
+    border: 1px solid var(--line); border-radius: 8px; background: #fff;
+    padding: 6px 8px; text-align: center; min-width: 64px;
+  }
+  .cell .cy { font-size: 11px; color: var(--muted); }
+  .cell .cg { font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; font-size: 20px; }
+  .cell.cur { border-color: var(--accent); background: #fdf6e0; box-shadow: 0 0 0 1px var(--accent) inset; }
+  .cell.jiao .cy { color: #c0392b; }
+  /* 页脚 */
+  .foot { color: var(--muted); font-size: 12px; line-height: 1.9; }
+  .brand { margin-top: 6px; color: #a89e86; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="card">
+    <div class="head">
+      <span class="name">{{NAME}}</span>
+      <span class="chip">{{GENDER_LABEL}}</span>
+      <span class="chip">日主 {{DAY_MASTER}}</span>
+    </div>
+    <div class="meta" style="margin-top:8px">
+      出生地：<b>{{BIRTHPLACE}}</b>　钟表时间：<b>{{BIRTH_CLOCK}}</b>　真太阳时：<b>{{TRUE_SOLAR}}</b><br>
+      月令：{{MONTH_LING}}　胎元：{{TAI_YUAN}}　命宫：{{MING_GONG}}　{{QIYUN}}
+    </div>
+    {{WARNINGS}}
+  </div>
+
+  <div class="card">
+    <div class="sect">排盘<span class="note">四柱 · 藏干 · 空亡 · 纳音 · 神煞（当前大运与流年并列对照）</span></div>
+    {{MAIN_TABLE}}
+  </div>
+
+  <div class="card">
+    <div class="sect">大运<span class="note">{{LUCK_NOTE}}</span></div>
+    {{LUCK_STRIP}}
+    {{CHILDHOOD_BLOCK}}
+  </div>
+
+  <div class="card">
+    <div class="sect">流年<span class="note">出生年至今后十年，今年高亮，红字年份为交运年</span></div>
+    {{FLOW_YEARS}}
+  </div>
+
+  <div class="card">
+    <div class="sect">流月<span class="note">本年节气月</span></div>
+    {{FLOW_MONTHS}}
+  </div>
+
+  <div class="card foot">
+    {{SEASON_BAR}}<br>
+    {{AUDIT}}
+    <div class="brand">灵爻妙解 · 传承易学智慧 · 本盘面由 AI 生成，仅供娱乐参考</div>
+  </div>
+
+</div>
+</body>
+</html>
