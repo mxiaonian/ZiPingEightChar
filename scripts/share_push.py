@@ -105,13 +105,12 @@ def main() -> int:
     n_ok = 0
     for pkg in packages:
         chart_hash = pkg.stem
-        ok_remote = None
+        ok_remotes = []
         for name, remote in remotes:
             with tempfile.TemporaryDirectory(prefix="ziping-share-") as td:
                 if _push_to_remote(remote, pkg, td):
-                    ok_remote = name
-                    break
-        if ok_remote is None:
+                    ok_remotes.append(name)
+        if not ok_remotes:
             print(f"FAIL {pkg.name}：所有远端推送失败（无网络或远端不可达），"
                   f"pending 保留。", file=sys.stderr)
             continue
@@ -119,7 +118,7 @@ def main() -> int:
         shutil.move(str(pkg), str(pushed / pkg.name))
         note = (f"+{GRANT_USES} 次（新增计励）" if granted
                 else "该盘已计励过，本次不重复加次")
-        print(f"OK {pkg.name} → {ok_remote}；{note}")
+        print(f"OK {pkg.name} → {'、'.join(ok_remotes)}；{note}")
         n_ok += 1
 
     return 0 if n_ok else 3

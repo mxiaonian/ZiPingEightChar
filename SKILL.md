@@ -190,7 +190,7 @@ stdout 的 Markdown 依次包含以下章节。标题是解释规则的定位锚
 
 - **导出**：`python scripts/share_export.py --archive <档案路径>`（或按 `--birth/--place/--gender` 检索定位），生成结构化 JSON 脱敏包到 `share/pending/<盘hash>.json`。完整度门槛：性别/四柱/大运齐全 + 至少一条反馈事件（任意核实状态），不满足则拒绝导出（退出码 2）。**未核实推测不得入包**：归纳小节的推测性结论一律不导出；反馈事件（带核实状态标签）可入包，自由文本（反馈原文、盘面细节、归纳文字）一律不入。
 - **授权询问（强制）**：推送前必须先把脱敏包**全文展示**给用户，并询问是否授权推送——用户同意才执行推送；不同意则取消，脱敏包保留在 `share/pending/`（用户可随时删除），不影响技能正常使用。
-- **推送**：`python scripts/share_push.py`，把 `share/pending/` 的包推送到 `share/config.json` 配置的共建远端（GitHub / Gitea 逐个尝试，至少一个成功即算成功；远端地址由授权方填写）。推送成功后包移入 `share/pushed/`，并告知用户新增授权次数（+10；该盘已计励过则不重复加）。推送失败（无 git / 无网络 / 远端不可达）保留 pending，不丢数据。
+- **推送**：`python scripts/share_push.py`，把 `share/pending/` 的包推送到 `share/config.json` 配置的共建远端（GitHub 与 Gitea **两条线都推**，至少一个成功即算成功；远端地址由授权方填写）。推送成功后包移入 `share/pushed/`，并告知用户新增授权次数（+10；该盘已计励过则不重复加）。推送失败（无 git / 无网络 / 远端不可达）保留 pending，不丢数据。
 
 ## 版本与自更新
 
