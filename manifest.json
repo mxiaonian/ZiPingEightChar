@@ -4,7 +4,7 @@
     "LICENSE.md": "6b839540e0fd4ab75530ec31fc5c3cbc3c2d5de5fe85068ef1c0901e54be9315",
     "README.md": "1e11e5d19856fbd9bb15068c74e184617a10b2e0b18c7e42d9b617cd0d8f534a",
     "SKILL.md": "eaff2bc3cc1221417caaf40cf86741c7fe2e43f7538fd9efc0f436c13c030a0b",
-    "VERSION": "76120c1f2c4311c2154c22a6b58e00e411e0ebe76afae0daf608d9196c61f114",
+    "VERSION": "eb41f86c3d67299b46490cde10158a521148fdc03641aa14a93fa2797becd78c",
     "data/.public_edition.json": "e8692c45d512c78903fc89a924d0e6d4dc9b95a78ca6b359bb7a5ef5c946ffee",
     "data/cities.json": "00f17905c8843218162e25238a78aeb4c4a3bb5424b611cc30ed9e436db31854",
     "memory/README.md": "b3cf2c58a8418a8c1a54243c2e09fbdb42f31dcd48ba8c841b74f1234c7fe063",
@@ -585,7 +585,7 @@
     "scripts/render/html.py": "9896ffc7c1f29cdce0d2ce9c21ce78ec6035b77851249466776945de918de49d",
     "scripts/render/markdown.py": "4b2bcc3fc6581728d74bbaa357bf1db2e8aec1d3ec54c2c27ca645b6c5179977",
     "scripts/render/templates/paipan.html": "9cdeed44834ef0de7adf0d775486b8ece7c81cf228107295e51bc31847a81688",
-    "scripts/self_update.py": "95dc0302ca2b78d71b2893ebaced7e233dbc00944a5e3c5b06081b5c9a749f8a",
+    "scripts/self_update.py": "b1c9ad0ef90e20ac75ac6b8e857a4a5bd31181c67a58c7c1d46b45f468fd9f26",
     "scripts/share_export.py": "21396143ad5cc2d244c7cc060a3ece25702594465689a9f12438dfe92de3296f",
     "scripts/share_push.py": "42683c27a93f12208c20b0a5cd2feb7cd81f9be3efb76b46d4789ad4d2aab4ca",
     "share/README.md": "42ebed92285752af93c7c7af5eb4b6e84ed836408d0cedb57e1b32c796746b26",
@@ -600,7 +600,7 @@
     "tests/test_license_gate.py": "ee44226b75620b3965ba52cc2a0cc5404fbff37822fd96a6faf2aed89d07d47e",
     "tests/test_luck.py": "821f98bc19ab1e920353de58c6ffacac5d757c887c690a2d596f51c1485b21ea",
     "tests/test_memory.py": "d3decfdc8d7c5bbfc4af5e3aed93bb3c53ab09071b682a0f4808614ac2cd3c6f",
-    "tests/test_self_update.py": "455461ba121814c8cdbe98bb2d31cd2dac630ef111eafb23118583c42f65a71c",
+    "tests/test_self_update.py": "183c2fb82d2d20285941b6c75a1890c4417d400c3c7e7d5f8a9680b4fa7bf76c",
     "tests/test_share.py": "399f20da22689d00e71eb78c76d60507060c29a7d68865e6b0e9f591d19be871",
     "tests/test_shensha.py": "b8a20d264e18c79f1fe546281381b0d929543af44ec68dc890ef8b64efc625b0",
     "tests/test_solar_time.py": "f072e5ea82fd0cb331c8a4fdc6dce08148cd9ac81ef9fe4506196fa68a42d1e4",
@@ -1268,5 +1268,5 @@
     "vendor/tzdata/zoneinfo/zonenow.tab": "7f9d1c11445af7a17862c20a9081226d31a09a1730e270ff59a34c8d2b4c7f7f",
     "vendor/tzdata/zones": "28d8f3eb25839095fa8a209997bb20e822ebfbebe21e60edc483a3d5e20dc881"
   },
-  "version": "3.5.0"
+  "version": "3.5.1"
 }

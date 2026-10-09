@@ -245,3 +245,36 @@ class TestCastChartIntegration:
                 cache_path.unlink(missing_ok=True)
             else:
                 cache_path.write_bytes(old_bytes)
+
+
+class TestFetchFallback:
+    def test_curl_fallback_when_urllib_ssl_fails(self, tmp_path, monkeypatch):
+        """urllib 证书校验失败时回退系统 curl（macOS 框架版 Python 场景）。"""
+        import urllib.request
+
+        def _boom(*a, **k):
+            raise urllib.request.URLError("CERTIFICATE_VERIFY_FAILED")
+
+        monkeypatch.setattr(urllib.request, "urlopen", _boom)
+
+        fake_curl = tmp_path / "curl"
+        fake_curl.write_text("#!/bin/sh\ncat \"$3\" | sed 's|^file://||' | xargs cat\n",
+                             encoding="utf-8")
+        src = tmp_path / "VERSION"
+        src.write_text("9.9.9\n", encoding="utf-8")
+        fake_curl.write_text(f'#!/bin/sh\ncat "{src}"\n', encoding="utf-8")
+        fake_curl.chmod(0o755)
+        monkeypatch.setattr(su.shutil, "which", lambda name: str(fake_curl))
+
+        assert su._fetch_text("https://example.invalid/VERSION") == "9.9.9\n"
+
+    def test_no_curl_no_urllib_raises(self, monkeypatch):
+        import urllib.request
+
+        def _boom(*a, **k):
+            raise urllib.request.URLError("SSL")
+
+        monkeypatch.setattr(urllib.request, "urlopen", _boom)
+        monkeypatch.setattr(su.shutil, "which", lambda name: None)
+        with pytest.raises(Exception):
+            su._fetch_text("https://example.invalid/VERSION")

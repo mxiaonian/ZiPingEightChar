@@ -12,12 +12,17 @@
 代理环境变量由 urllib 默认读取、自动生效。测试或自建场景可用环境变量
 ZIPEC_VERSION_URLS / ZIPEC_ZIPBALL_URLS（逗号分隔）整体覆盖远端地址，
 支持 file:// 形式。
+
+抓取通道：urllib 优先；macOS 框架版 Python 常见的根证书缺失
+（SSL CERTIFICATE_VERIFY_FAILED）时自动回退到系统 curl（curl 自带
+系统信任库且自带代理环境变量支持）。
 """
 import argparse
 import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -62,15 +67,28 @@ def _zipball_urls() -> list:
     return [GITHUB_ZIPBALL_URL, GITEA_ZIPBALL_URL]
 
 
+def _fetch_bytes(url: str, timeout: int) -> bytes:
+    """urllib 优先；SSL 证书缺失等失败时回退系统 curl（macOS 框架版 Python 常见）。"""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return r.read()
+    except Exception:
+        curl = shutil.which("curl")
+        if not curl:
+            raise
+        r = subprocess.run([curl, "-fsSL", "-m", str(timeout), url],
+                           capture_output=True)
+        if r.returncode != 0:
+            raise RuntimeError(f"curl 抓取失败（{r.returncode}）：{url}")
+        return r.stdout
+
+
 def _fetch_text(url: str, timeout: int = NETWORK_TIMEOUT) -> str:
-    with urllib.request.urlopen(url, timeout=timeout) as r:
-        return r.read().decode("utf-8")
+    return _fetch_bytes(url, timeout).decode("utf-8")
 
 
 def _download(url: str, dest: Path, timeout: int = NETWORK_TIMEOUT) -> None:
-    with urllib.request.urlopen(url, timeout=timeout) as r:
-        with open(dest, "wb") as fh:
-            shutil.copyfileobj(r, fh)
+    dest.write_bytes(_fetch_bytes(url, timeout))
 
 
 def parse_version(text: str) -> tuple:
