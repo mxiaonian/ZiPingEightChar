@@ -9,7 +9,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from chart.shensha import evaluate_natal, evaluate_target  # noqa: E402
+from chart.ganzhi import GAN, ZHI  # noqa: E402
+from chart.shensha import STAR_ORDER, evaluate_natal, evaluate_target  # noqa: E402
+
+_VENDOR = Path(__file__).resolve().parents[1] / "vendor"
+if _VENDOR.is_dir():
+    sys.path.insert(0, str(_VENDOR))
+try:  # 排盘适配层（含排序逻辑）；无 tyme4py 的环境跳过其回归测试
+    from chart.tyme_adapter import _shen_sha
+except ImportError:  # pragma: no cover
+    _shen_sha = None
 
 
 def natal(year, month, day, hour, gender="男"):
@@ -265,6 +274,62 @@ class TargetQueryTest(unittest.TestCase):
         self.assertEqual(names, {"月德合", "驿马", "劫煞", "地网", "童子煞"})
         own = {s for s, _ in r["own"]}
         self.assertEqual(own, {"十恶大败"})
+
+
+def _jiazi60() -> list[str]:
+    return [GAN[i % 10] + ZHI[i % 12] for i in range(60)]
+
+
+# 甲子…乙亥：12 个干支覆盖全部 10 天干与 12 地支（月、时柱扫面用）
+_SPREAD12 = _jiazi60()[:12]
+
+
+class StarOrderExhaustiveTest(unittest.TestCase):
+    """根治校验：求值器一切可能产出的神煞名都必须落在 STAR_ORDER 键集内。
+
+    3.6.0 事故：三奇贵人漏录排序表，排盘排序 KeyError。此处穷举求值器
+    全部输入维度（年柱 60 × 月柱 12 全干支行 × 日柱 60 × 时柱 12 全干支行
+    × 男女），收集实际产出的星名集合，断言与 STAR_ORDER 完全一致——
+    新增神煞忘补排序表、或排序表残留死项，都会被本测试当场抓住。
+    """
+
+    def test_star_order_no_duplicates(self):
+        self.assertEqual(len(STAR_ORDER), len(set(STAR_ORDER)))
+
+    def test_natal_outputs_exactly_star_order(self):
+        produced: set[str] = set()
+        for year in _jiazi60():
+            for month in _SPREAD12:
+                for day in _jiazi60():
+                    for hour in _SPREAD12:
+                        for gender in ("男", "女"):
+                            r = evaluate_natal(
+                                {"year": year, "month": month,
+                                 "day": day, "hour": hour}, gender)
+                            for entries in r.values():
+                                produced.update(s for s, _ in entries)
+        self.assertEqual(produced, set(STAR_ORDER))
+
+    def test_target_outputs_subset_of_star_order(self):
+        """岁运查询同理：年 60 × 月 4（四季各一）× 日 60 × 目标干支 60。"""
+        produced: set[str] = set()
+        for year in _jiazi60():
+            for month in ("甲寅", "乙巳", "丙申", "丁亥"):
+                for day in _jiazi60():
+                    p = {"year": year, "month": month, "day": day, "hour": "甲子"}
+                    for target in _jiazi60():
+                        r = evaluate_target(p, "男", target)
+                        produced.update(s for s, _ in r["anchored"])
+                        produced.update(s for s, _ in r["own"])
+        missing = produced - set(STAR_ORDER)
+        self.assertEqual(missing, set())
+
+    @unittest.skipIf(_shen_sha is None, "tyme4py 不可用")
+    def test_sanqi_combo_survives_adapter_sort(self):
+        """回归：combo 组三奇贵人经 tyme_adapter._shen_sha 排序不再 KeyError。"""
+        out = _shen_sha({"year": "甲辰", "month": "戊辰",
+                         "day": "庚子", "hour": "辛巳"}, "男")
+        self.assertTrue(any(s.startswith("三奇贵人") for s in out["combo"]))
 
 
 if __name__ == "__main__":

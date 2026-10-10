@@ -19,6 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import _runtime_guard  # noqa: F401  import 即检查：Python < 3.10 时中文报错退出（码 3）
 import _memory_store as store
 
 

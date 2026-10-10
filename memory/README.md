@@ -7,6 +7,11 @@
 python scripts/memory_save.py --name 张三 --gender 男 \
     --birth "1990-05-14 08:30" --place "四川省成都市"
 
+# 换盘（经用户确认换盘后）：重排并整体替换「## 盘面」段，frontmatter 同步；
+# 姓名/性别/出生信息读档案，--birth/--place 仅在校正时给覆盖值
+python scripts/memory_save.py --update-chart archives/<档案>.md \
+    [--day-boundary 子正] [--birth "校正后时刻"] [--place "校正后地点"]
+
 # 检索（条件任意组合、至少一项；大小写/空白容错）
 python scripts/memory_lookup.py [--name 张三] [--birth "1990-05-14 08:30"] \
     [--place 四川省成都市] [--gender 男] [--pillars "庚午 辛巳 己卯 戊辰"]
@@ -21,7 +26,16 @@ python scripts/memory_lookup.py [--name 张三] [--birth "1990-05-14 08:30"] \
 `archives/<四柱连写>-<性别>-<hash6>.md`，其中
 hash6 = sha1(出生钟表时间 + 出生地 + 性别)（UTF-8）前 6 位十六进制，
 用于区分同盘不同人。同主键再次建档只刷新 frontmatter 与「## 盘面」，
-正文其余小节原样保留。
+正文其余小节原样保留。换盘（`--update-chart`）后四柱或 hash6 变动时，
+文件改为新主键名（目标已存在则拒绝覆盖，报错退出 2）。
+
+## 换盘纪律（工作盘唯一 + 变更留痕）
+
+经用户确认换盘（日界规则分歧、时辰/出生地校正等）后，必须重排并把
+「## 盘面」段整体替换为新盘：档案任何时候只有一个工作盘，旧盘信息
+（原四柱、换盘原因、确认方式与时间）记入「反馈与澄清」校订条目，不留盘面段。
+凡受变动柱影响的已有推断条目（归纳、流年大事各行）同轮标记【待复核】，
+复核前不得继续引用。
 
 ## Schema
 

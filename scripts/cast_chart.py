@@ -18,6 +18,8 @@ from pathlib import Path
 # 引导：无论从哪个目录调用，scripts/ 下的顶层包（geo/astro/chart/render）都可导入
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import _runtime_guard  # noqa: F401  import 即检查：Python < 3.10 时中文报错退出（码 3）
+
 # 免安装：优先使用随包内置的依赖（vendor/，版本锁定 tyme4py==1.5.0 + tzdata）
 # vendor 目录不存在时回退到环境中已安装的包（开发模式）
 _VENDOR = Path(__file__).resolve().parents[1] / "vendor"
@@ -39,6 +41,9 @@ def main() -> int:
                     help="出生地，精确到地级市一级，如「四川省成都市」")
     ap.add_argument("--html", nargs="?", const="", default=None,
                     help="可选：同时生成 HTML 盘面图（给路径参数，或省略则写 ./命盘_<姓名>.html）")
+    ap.add_argument("--shot", action="store_true",
+                    help="可选：生成 HTML 盘面图并截图 PNG，路径打在 stdout 末尾；"
+                         "截图工具不可用时只出 HTML")
     a = ap.parse_args()
 
     # 软授权锁：定制副本（含 data/.license.json）按授权次数/期限放行；母版无状态文件直接放行
@@ -132,14 +137,24 @@ def main() -> int:
         print(render(chart))
         _gate.consume(Path(__file__).resolve().parents[1])
 
-        # 可选：同步生成 HTML 盘面图（渲染失败不影响 stdout 契约）
-        if a.html is not None:
+        # 可选：同步生成 HTML 盘面图（渲染失败不影响 stdout 契约）；--shot 再截图 PNG
+        if a.html is not None or a.shot:
             try:
                 from render.html import build_html
                 html_path = (Path(a.html) if a.html
                              else Path(f"命盘_{a.name}.html"))
                 html_path.write_text(build_html(chart), encoding="utf-8")
-                print(f"HTML 盘面：{html_path.resolve()}", file=sys.stderr)
+                if a.shot:
+                    import chart_shot
+                    png = chart_shot.shoot(html_path)
+                    print(f"\nHTML 盘面：{html_path.resolve()}")
+                    if png:
+                        print(f"盘面截图：{png}")
+                    else:
+                        print("盘面截图：不可用（未检测到 playwright 或 Chrome，"
+                              "可直接打开上面的 HTML 查看盘面）")
+                else:
+                    print(f"HTML 盘面：{html_path.resolve()}", file=sys.stderr)
             except Exception:
                 print("WARN: HTML 盘面生成失败（命盘不受影响）", file=sys.stderr)
 

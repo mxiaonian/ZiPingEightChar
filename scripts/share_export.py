@@ -6,11 +6,18 @@
     python share_export.py --birth "1990-05-14 08:30" --place "四川省成都市" --gender 男
 
 脱敏规格（见 share/README.md）：不含姓名；出生信息只保留年月日与时辰（不留分钟
-与钟表时间）；地域只保留到省级；事件一律类目化；正文自由文本（归纳、盘面细节、
-反馈原文）不入包。盘 hash = sha1(四柱+出生地) 前 8 位，用于去重与撤回。
+与钟表时间）；地域保留到城市级（省+地级市，区县及以下删除）；事件带类目与简介
+（note），简介中城市级地名保留（规则蒸馏要用方位信息），姓名、详细住址
+（小区/门牌/街道号）、身份证/电话等直接定位信息一律删除；归纳、盘面细节等
+正文自由文本不入包。盘 hash = sha1(四柱+出生地) 前 8 位，用于去重与撤回。
 
 完整度门槛：性别/四柱/大运齐全 + 至少一条反馈事件（任意核实状态）；
-不满足拒绝导出，退出码 2 并说明缺什么。退出码：0 成功；2 不可用/不完整；3 内部错误。
+不满足拒绝导出，退出码 2 并说明缺什么。事件简介缺失（档案未写事件内容）
+不挡导出，JSON 中如实反映（events 为空或 note 为 null）。
+换盘残留提示：导出时若 pending/ 中已有同出生日、同性别但盘 hash 不同的
+旧包（多为换盘/信息更正后的孤儿包），stderr 打 WARN 列出路径，提醒人工清理
+（只提示，不自动删）。
+退出码：0 成功；2 不可用/不完整；3 内部错误。
 """
 from __future__ import annotations
 
@@ -25,6 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import _runtime_guard  # noqa: F401  import 即检查：Python < 3.10 时中文报错退出（码 3）
 import _memory_store as store
 
 SCHEMA = "share/v1"
@@ -37,7 +45,7 @@ CATEGORIES: list[tuple[str, tuple[str, ...]]] = [
     ("事业", ("事业", "工作", "升职", "跳槽", "调动", "失业", "创业", "辞职", "职务", "官非")),
     ("财运", ("财运", "破财", "投资", "收入", "赚钱", "欠债", "债务", "置业", "买房")),
     ("健康", ("健康", "生病", "手术", "伤病", "身体", "住院", "疾病", "意外")),
-    ("学业", ("学业", "考试", "升学", "考研", "高考", "留学", "读书")),
+    ("学业", ("学业", "考试", "升学", "考研", "高考", "留学", "读书", "大学")),
     ("六亲", ("父亲", "母亲", "父母", "子女", "孩子", "兄弟", "姐妹", "六亲", "亲人", "丧")),
     ("流年运势", ("流年", "运势", "大运", "运程")),
 ]
@@ -60,6 +68,9 @@ _PROVINCE_SHORT = {
 
 _STATUS_TAGS = {"【已核实】": "已核实", "【已证伪】": "已证伪", "【未核实】": "未核实"}
 
+_GZ_RE = re.compile(r"[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]")
+_YEAR_RE = re.compile(r"(?:19|20)\d{2}")
+
 
 def _categorize_all(text: str) -> list[str]:
     return [cat for cat, keywords in CATEGORIES if any(k in text for k in keywords)]
@@ -71,7 +82,7 @@ def _categorize(text: str) -> str:
 
 
 def _province_of(birthplace: str) -> str | None:
-    """地域脱敏：只保留到省级；识别不出省级则舍弃（宁缺毋滥）。"""
+    """地域脱敏：省级；识别不出省级则舍弃（宁缺毋滥）。"""
     for p in _PROVINCES:
         if p in birthplace:
             return p
@@ -80,6 +91,42 @@ def _province_of(birthplace: str) -> str | None:
             return full
     m = re.match(r"^(.{2,6}?省)", birthplace)
     return m.group(1) if m else None
+
+
+def _city_of(birthplace: str) -> str | None:
+    """地域脱敏：城市级（地级市/州/盟；直辖市即省级本身）。识别不出则舍弃。"""
+    province = _province_of(birthplace)
+    if province in ("北京市", "天津市", "上海市", "重庆市",
+                    "香港特别行政区", "澳门特别行政区"):
+        return province
+    rest = birthplace
+    if province and rest.startswith(province):
+        rest = rest[len(province):]
+    m = re.match(r"^(.{2,10}?(?:市|州|盟))", rest)
+    return m.group(1) if m else None
+
+
+def _sanitize_note(text: str, name: str) -> str:
+    """事件简介脱敏：姓名、身份证/电话、详细住址（小区/门牌/街道号）一律删除；
+    城市级地名保留（规则蒸馏要用方位信息）。"""
+    t = text
+    if name and name not in PLACEHOLDERS:
+        t = t.replace(name, "命主")
+    t = re.sub(r"\d{17}[\dXx]", "（已删）", t)                     # 身份证
+    t = re.sub(r"1[3-9]\d{9}", "（已删）", t)                       # 手机号
+    t = re.sub(r"\d{3,4}-\d{7,8}", "（已删）", t)                   # 座机号
+    t = re.sub(r"[^\s，。；：、（）]*(?:小区|公寓|花园|山庄|新村|苑|大院)"
+               r"[^\s，。；：、（）]*", "（已删）", t)              # 小区/楼盘名
+    t = re.sub(r"\d+\s*(?:号楼|栋|单元|室|号院|层|户)", "（已删）", t)  # 楼栋门牌
+    t = re.sub(r"(?:街|路|巷|大道|道)\s*\d+\s*号(?:\s*\d+\s*室)?",
+               "（已删）", t)                                       # 街道号
+    return t.strip()
+
+
+def _strip_tags(text: str) -> str:
+    for tag in _STATUS_TAGS:
+        text = text.replace(tag, "")
+    return text.strip()
 
 
 def _section_lines(body: str, heading: str) -> list[str]:
@@ -129,22 +176,59 @@ def _parse_focus(body: str) -> list[str]:
     return cats
 
 
-def _parse_feedback(body: str) -> list[dict]:
-    """反馈事件：只取年份、类目、核实状态——反馈原文不入包。"""
+def _status_of(t: str) -> str:
+    for tag, name in _STATUS_TAGS.items():
+        if tag in t:
+            return name
+    return "未核实"
+
+
+def _parse_feedback(body: str, name: str) -> list[dict]:
+    """反馈事件：年份、类目、核实状态 + 事件简介（note，脱敏后；无实质内容则为 None）。"""
     events = []
     for ln in _section_lines(body, "反馈与澄清"):
         t = ln.strip().lstrip("-•· ").strip()
         if not t or t in PLACEHOLDERS:
             continue
-        status = "未核实"
-        for tag, name in _STATUS_TAGS.items():
-            if tag in t:
-                status = name
-                break
-        m = re.search(r"(?:19|20)\d{2}", t)
+        m = _YEAR_RE.search(t)
+        note = _sanitize_note(_strip_tags(t), name)
         events.append({"year": int(m.group(0)) if m else None,
                        "category": _categorize(t),
-                       "status": status})
+                       "status": _status_of(t),
+                       "note": note or None})
+    return events
+
+
+def _parse_events(body: str, name: str) -> list[dict]:
+    """流年大事：年份（区间取首年）、干支、标签、核实状态 + 事件简介（脱敏后）。
+
+    行形如「- 2016（丙申·交运年，入丁酉运）：【已核实】离乡，自四川乐山赴厦门读大学。」；
+    无括号标签或缺事件内容时对应字段为 None（如实反映，不挡导出）。
+    """
+    events = []
+    for ln in _section_lines(body, "流年大事"):
+        t = ln.strip().lstrip("-•· ").strip()
+        if not t or t in PLACEHOLDERS:
+            continue
+        m = re.match(r"^((?:19|20)\d{2})(?:[–—\-]\d{2,4})?"
+                     r"(?:（([^）]*)）)?\s*[：:]\s*(.+)$", t)
+        if m:
+            year = int(m.group(1))
+            label = m.group(2) or None
+            note = m.group(3)
+        else:
+            ym = _YEAR_RE.search(t)
+            year = int(ym.group(0)) if ym else None
+            label = None
+            note = t
+        ganzhi = None
+        if label:
+            gz = _GZ_RE.search(label)
+            ganzhi = gz.group(0) if gz else None
+        note = _sanitize_note(_strip_tags(note), name)
+        events.append({"year": year, "ganzhi": ganzhi, "label": label,
+                       "note": note or None, "status": _status_of(t),
+                       "category": _categorize(t)})
     return events
 
 
@@ -154,13 +238,18 @@ def chart_hash(pillars: list[str], birthplace: str) -> str:
 
 
 def build_package(meta: dict, body: str) -> tuple[dict, list[str]]:
-    """组装脱敏包；返回 (package, 缺失项列表)。package 保证不含姓名/分钟/省以下地域。"""
+    """组装脱敏包；返回 (package, 缺失项列表)。
+
+    保证不含姓名、出生分钟/钟表时间、区县及以下地域；事件简介中城市级地名保留，
+    直接定位信息（详细住址、证件、电话）已删除。
+    """
     pillars = meta.get("pillars", [])
     if isinstance(pillars, str):
         pillars = pillars.split()
     pillars = [str(p) for p in pillars]
     birthplace = str(meta.get("birthplace", ""))
     gender = str(meta.get("gender", ""))
+    name = str(meta.get("name", ""))
 
     pkg: dict = {"schema": SCHEMA,
                  "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -169,7 +258,8 @@ def build_package(meta: dict, body: str) -> tuple[dict, list[str]]:
                  "pillars": pillars,
                  "luck_pillars": _parse_luck(body),
                  "focus_categories": _parse_focus(body),
-                 "feedback": _parse_feedback(body)}
+                 "events": _parse_events(body, name),
+                 "feedback": _parse_feedback(body, name)}
 
     # 出生信息脱敏：只保留年月日与时辰（时支），不留分钟与钟表时间
     m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", str(meta.get("birth_clock", "")).strip())
@@ -180,6 +270,9 @@ def build_package(meta: dict, body: str) -> tuple[dict, list[str]]:
     province = _province_of(birthplace)
     if province:
         pkg["region_province"] = province
+    city = _city_of(birthplace)
+    if city:
+        pkg["region_city"] = city
 
     missing = []
     if not gender:
@@ -210,7 +303,7 @@ def _find_archive(args) -> Path | None:
 def main() -> int:
     ap = argparse.ArgumentParser(
         prog="share_export.py",
-        description="从 memory 档案导出结构化脱敏包（JSON）到 share/pending/；不含姓名、分钟、省以下地域")
+        description="从 memory 档案导出结构化脱敏包（JSON）到 share/pending/；不含姓名、分钟、区县及以下地域")
     ap.add_argument("--archive", default=None, help="档案文件路径（直接指定）")
     ap.add_argument("--name", default=None, help="姓名（检索条件）")
     ap.add_argument("--gender", default=None, choices=["男", "女"], help="性别（检索条件）")
@@ -249,6 +342,21 @@ def main() -> int:
         pending = share_root / "pending"
         pending.mkdir(parents=True, exist_ok=True)
         out = pending / f"{pkg['chart_hash']}.json"
+        # 换盘孤儿包提示：pending 中同出生日、同性别但盘 hash 不同的旧包，
+        # 多为换盘/信息更正后的残留，提醒人工清理（只提示，不自动删）
+        for old in sorted(pending.glob("*.json")):
+            if old.name == out.name:
+                continue
+            try:
+                opkg = json.loads(old.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if (opkg.get("birth_date") == pkg.get("birth_date")
+                    and opkg.get("gender") == pkg.get("gender")
+                    and opkg.get("chart_hash") != pkg["chart_hash"]):
+                print(f"WARN: pending 中已有同出生日同性别的旧包（盘 hash 不同），"
+                      f"疑似换盘残留：{old}；确认后请手动删除，避免误推。",
+                      file=sys.stderr)
         out.write_text(json.dumps(pkg, ensure_ascii=False, indent=2) + "\n",
                        encoding="utf-8")
         print(out)

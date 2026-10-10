@@ -5,24 +5,69 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{TITLE}}</title>
 <style>
+  @font-face {
+    font-family: 'LogoFont';
+    src: url("data:font/ttf;base64,{{FONT_B64}}") format("truetype");
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
   :root {
-    --ink: #2b2b2b; --muted: #8a8577; --line: #e6dfd2; --bg: #f7f4ee;
-    --card: #fffdf8; --accent: #b08d2f;
+    /* 灵爻妙解网站浅色主题（root.css :root.light + paipan_base.css） */
+    --ink: #222831;
+    --muted: rgba(27, 27, 27, .52);
+    --soft: rgba(27, 27, 27, .68);
+    --line: rgba(193, 188, 235, .55);
+    --card-line: rgba(193, 188, 235, .45);
+    --accent: #dc7b28;            /* 网站浅色 primary-color-1 */
+    --accent-2: #f97316;          /* 网站浅色 primary-color-3 */
     --wx-mu: #2e7d32; --wx-huo: #c62828; --wx-tu: #8d6e63;
     --wx-jin: #af8c2c; --wx-shui: #1565c0;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; padding: 24px; background: var(--bg); color: var(--ink);
+    margin: 0; padding: 28px 24px 32px; color: var(--ink);
     font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(ellipse 72% 58% at 78% 20%, rgba(150, 125, 245, .18), transparent 68%),
+      radial-gradient(ellipse 66% 48% at 20% 18%, rgba(112, 174, 255, .18), transparent 70%),
+      radial-gradient(ellipse 82% 52% at 52% 92%, rgba(84, 210, 200, .11), transparent 72%),
+      linear-gradient(135deg, #fbfcff 0%, #f5f8ff 42%, #f2edff 100%);
+    background-attachment: fixed;
   }
-  .page { max-width: 980px; margin: 0 auto; }
+  .page { max-width: 1100px; margin: 0 auto; }
+
+  /* 顶部品牌区：base.html 抽屉顶部 .drawer-brand 的居中放大版 */
+  .brand-head {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; margin: 2px 0 20px;
+  }
+  .brand-logo { width: 52px; height: 52px; display: block; }
+  .brand-name {
+    font-family: 'LogoFont', 'Kaiti SC', 'STKaiti', 'KaiTi', serif;
+    font-weight: 500; font-size: 30px; line-height: 1.25;
+    color: var(--ink); letter-spacing: 1px;
+  }
+  .brand-slogan {
+    margin-top: 3px; font-size: 11px; letter-spacing: 3.5px;
+    color: var(--muted);
+  }
+
+  /* 大卡片：网站左 panel（.panel）亮色风格 */
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(250, 252, 255, 1));
+    box-shadow: 0 16px 38px rgba(48, 56, 96, .12);
+    padding: 16px;
+  }
+  /* 面板内子卡 */
   .card {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(60, 50, 30, .06);
+    background: #fff; border: 1px solid var(--card-line);
+    border-radius: 8px; padding: 16px 18px; margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(48, 56, 96, .05);
   }
-  /* 头部 */
+  .card:last-child { margin-bottom: 0; }
+
+  /* 用户信息 */
   .head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
   .name { font-size: 28px; font-weight: 700; font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
   .chip {
@@ -31,90 +76,128 @@
   }
   .meta { color: var(--muted); font-size: 13px; line-height: 1.9; }
   .meta b { color: var(--ink); font-weight: 600; }
+  .meta.tech {
+    margin-top: 8px; padding-top: 8px; font-size: 12.5px;
+    border-top: 1px dashed var(--card-line);
+  }
   .warn {
     margin-top: 6px; padding: 6px 10px; border-radius: 8px;
     background: #fdf3e3; border: 1px solid #ecd9ae; color: #8a6d1d; font-size: 12.5px;
   }
+
   /* 主排盘表 */
   table.pan { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .pan th, .pan td {
-    border: 1px solid var(--line); text-align: center;
+    border: 1px solid var(--card-line); text-align: center;
     padding: 6px 4px; vertical-align: middle; font-size: 14px;
   }
-  .pan th { background: #f3eee2; color: #6b6455; font-weight: 600; }
-  .pan td.rowlabel { background: #f3eee2; color: #6b6455; font-size: 13px; width: 64px; }
+  .pan th { background: rgba(193, 188, 235, .18); color: var(--soft); font-weight: 600; }
+  .pan td.rowlabel { background: rgba(193, 188, 235, .14); color: var(--soft); font-size: 13px; width: 64px; }
   .gz { font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; font-size: 34px; line-height: 1.25; }
-  .god { font-size: 12.5px; color: #7a7264; }
+  .god { font-size: 12.5px; color: var(--muted); }
   .god.day { color: var(--accent); font-weight: 600; }
-  .hidden { font-size: 12.5px; line-height: 1.7; color: #57503f; }
+  .hidden { font-size: 12.5px; line-height: 1.7; color: var(--soft); }
   .hidden .hg { font-weight: 600; }
-  .small { font-size: 12.5px; color: #57503f; line-height: 1.7; }
+  .small { font-size: 12.5px; color: var(--soft); line-height: 1.7; }
   .voidz { border-bottom: 2px dashed #c0392b; padding-bottom: 1px; }
-  .cur { background: #fdf6e0; }
-  .curtag { display:block; font-size: 11px; color: var(--accent); }
+  .cur { background: rgba(220, 123, 40, .07); }
+  .curtag { display: block; font-size: 11px; color: var(--accent); }
   .wx-mu { color: var(--wx-mu); } .wx-huo { color: var(--wx-huo); }
   .wx-tu { color: var(--wx-tu); } .wx-jin { color: var(--wx-jin); }
   .wx-shui { color: var(--wx-shui); }
+
   /* 条带 */
   .sect { font-size: 15px; font-weight: 700; margin: 2px 0 10px;
           font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
   .sect .note { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
   .strip { display: flex; flex-wrap: wrap; gap: 6px; }
   .cell {
-    border: 1px solid var(--line); border-radius: 8px; background: #fff;
-    padding: 6px 8px; text-align: center; min-width: 64px;
+    border: 1px solid var(--card-line); border-radius: 8px; background: #fff;
+    padding: 6px 8px; text-align: center; min-width: 64px; max-width: 96px;
   }
   .cell .cy { font-size: 11px; color: var(--muted); }
   .cell .cg { font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; font-size: 20px; }
-  .cell.cur { border-color: var(--accent); background: #fdf6e0; box-shadow: 0 0 0 1px var(--accent) inset; }
+  .cell .cs { font-size: 11px; color: var(--muted); line-height: 1.55; margin-top: 1px; }
+  .cell.cur { border-color: var(--accent); background: rgba(220, 123, 40, .07); box-shadow: 0 0 0 1px var(--accent) inset; }
   .cell.jiao .cy { color: #c0392b; }
+
+  /* 尾部交流群卡：左图右文 */
+  .qrcard { display: flex; align-items: center; gap: 16px; }
+  .qrimg { width: 108px; height: 108px; border-radius: 6px; display: block; }
+  .qrtitle { font-size: 15px; font-weight: 700;
+             font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
+  .qrdesc { margin-top: 4px; font-size: 12.5px; color: var(--soft); line-height: 1.8; }
+
   /* 页脚 */
-  .foot { color: var(--muted); font-size: 12px; line-height: 1.9; }
-  .brand { margin-top: 6px; color: #a89e86; }
+  .foot {
+    text-align: center; color: var(--muted); font-size: 12px;
+    line-height: 1.9; margin-top: 16px;
+  }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <div class="card">
-    <div class="head">
-      <span class="name">{{NAME}}</span>
-      <span class="chip">{{GENDER_LABEL}}</span>
-      <span class="chip">日主 {{DAY_MASTER}}</span>
+  <div class="brand-head">
+    <img class="brand-logo" src="data:image/png;base64,{{LOGO_B64}}" alt="灵爻妙解">
+    <div class="brand-text">
+      <div class="brand-name">灵爻妙解</div>
+      <div class="brand-slogan">传承易学智慧</div>
     </div>
-    <div class="meta" style="margin-top:8px">
-      出生地：<b>{{BIRTHPLACE}}</b>　钟表时间：<b>{{BIRTH_CLOCK}}</b>　真太阳时：<b>{{TRUE_SOLAR}}</b><br>
-      月令：{{MONTH_LING}}　胎元：{{TAI_YUAN}}　命宫：{{MING_GONG}}　{{QIYUN}}
+  </div>
+
+  <div class="panel">
+
+    <div class="card">
+      <div class="head">
+        <span class="name">{{NAME}}</span>
+        <span class="chip">{{GENDER_LABEL}}</span>
+        <span class="chip">日主 {{DAY_MASTER}}</span>
+      </div>
+      <div class="meta" style="margin-top:8px">
+        出生地：<b>{{BIRTHPLACE}}</b>　钟表时间：<b>{{BIRTH_CLOCK}}</b>　真太阳时：<b>{{TRUE_SOLAR}}</b><br>
+        月令：{{MONTH_LING}}　胎元：{{TAI_YUAN}}　命宫：{{MING_GONG}}　{{QIYUN}}
+      </div>
+      {{WARNINGS}}
+      <div class="meta tech">
+        {{SEASON_BAR}}<br>
+        {{AUDIT}}
+      </div>
+      <!-- 排盘审计原文（开发溯源，含版本信息）：{{AUDIT_FULL}} -->
     </div>
-    {{WARNINGS}}
+
+    <div class="card">
+      <div class="sect">排盘<span class="note">四柱 · 藏干 · 空亡 · 纳音 · 神煞</span></div>
+      {{MAIN_TABLE}}
+    </div>
+
+    <div class="card">
+      <div class="sect">大运<span class="note">{{LUCK_NOTE}}</span></div>
+      {{LUCK_STRIP}}
+      {{CHILDHOOD_BLOCK}}
+    </div>
+
+    <div class="card">
+      <div class="sect">流年<span class="note">出生年至今后十年，今年高亮，红字年份为交运年</span></div>
+      {{FLOW_YEARS}}
+    </div>
+
+    <div class="card">
+      <div class="sect">流月<span class="note">本年节气月</span></div>
+      {{FLOW_MONTHS}}
+    </div>
+
+    <div class="card qrcard">
+      <img class="qrimg" src="data:image/jpeg;base64,{{QRCODE_B64}}" alt="微信群二维码">
+      <div class="qrtext">
+        <div class="qrtitle">灵爻妙解 · 传统文化交流群</div>
+        <div class="qrdesc">扫码加入微信群：反馈解读偏差、交流文化心得、参与档案共建，版本更新动态第一时间同步。</div>
+      </div>
+    </div>
+
   </div>
 
-  <div class="card">
-    <div class="sect">排盘<span class="note">四柱 · 藏干 · 空亡 · 纳音 · 神煞（当前大运与流年并列对照）</span></div>
-    {{MAIN_TABLE}}
-  </div>
-
-  <div class="card">
-    <div class="sect">大运<span class="note">{{LUCK_NOTE}}</span></div>
-    {{LUCK_STRIP}}
-    {{CHILDHOOD_BLOCK}}
-  </div>
-
-  <div class="card">
-    <div class="sect">流年<span class="note">出生年至今后十年，今年高亮，红字年份为交运年</span></div>
-    {{FLOW_YEARS}}
-  </div>
-
-  <div class="card">
-    <div class="sect">流月<span class="note">本年节气月</span></div>
-    {{FLOW_MONTHS}}
-  </div>
-
-  <div class="card foot">
-    {{SEASON_BAR}}<br>
-    {{AUDIT}}
-    <div class="brand">灵爻妙解 · 传承易学智慧 · 本盘面由 AI 生成，仅供娱乐参考</div>
-  </div>
+  <div class="foot">灵爻妙解 · 传承易学智慧 · 本盘面由 AI 生成，仅供娱乐参考</div>
 
 </div>
 </body>
