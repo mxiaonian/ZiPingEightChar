@@ -4,20 +4,33 @@
 用法：
     python scripts/self_update.py --check    检查更新（24 小时缓存，重复检查不拉网络）
     python scripts/self_update.py --notify   只读缓存打印提示，绝不碰网络（供 cast_chart 调用）
-    python scripts/self_update.py --apply    下载 zipball → 按 manifest 逐文件校验 → 同步本地
+    python scripts/self_update.py --apply    下载 zipball → 验签 → 按 manifest 逐文件校验 → 同步本地
 
 退出码（--apply）：0 成功；2 无需更新或配置缺失；3 失败（本地原样不动）。
 
+信任模型（三道防线，各防一层）：
+    1. 签名信任锚：manifest.json 附带 ed25519 签名 manifest.json.sig，
+       公钥内置于本文件（UPDATE_PUBLIC_KEY_HEX），私钥仅作者持有
+       （~/.zipec/signing.key，不进任何仓库）。仓库（GitHub/Gitea）或
+       下载链路被攻破时，攻击者改 manifest 即验签失败——防「源头投毒」。
+    2. 双源交叉验证：--apply 从 GitHub 与 Gitea 各拉一份 manifest.json，
+       与 zip 内字节逐一比对，任一不一致即中止——防「单一源被篡改/
+       劫持后单独口径」。
+    3. 逐文件 SHA256：manifest 通过前两关后，逐文件核对清单哈希——
+       防「zip 内文件与清单不符」（传输损坏、打包错误、部分篡改）。
+    manifest.json.sig 本身不进 manifest 清单（自指），随仓库提交分发。
+
 远端双线路 failover：GitHub 优先，Gitea 兜底。HTTPS_PROXY/HTTP_PROXY 等
 代理环境变量由 urllib 默认读取、自动生效。测试或自建场景可用环境变量
-ZIPEC_VERSION_URLS / ZIPEC_ZIPBALL_URLS（逗号分隔）整体覆盖远端地址，
-支持 file:// 形式。
+ZIPEC_VERSION_URLS / ZIPEC_ZIPBALL_URLS / ZIPEC_MANIFEST_URLS（逗号分隔）
+整体覆盖远端地址，支持 file:// 形式。
 
 抓取通道：urllib 优先；macOS 框架版 Python 常见的根证书缺失
 （SSL CERTIFICATE_VERIFY_FAILED）时自动回退到系统 curl（curl 自带
-系统信任库且自带代理环境变量支持）。
+系统信任库且自带代理环境变量支持）。manifest 与 .sig 的抓取同走此通道。
 """
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -34,12 +47,21 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import _runtime_guard  # noqa: F401  import 即检查：Python < 3.10 时中文报错退出（码 3）
+import _update_sig  # 纯 Python ed25519（RFC 8032），零依赖验签
 
 # ---- 远端配置（GitHub 优先，Gitea 兜底）----
 GITHUB_VERSION_URL = "https://raw.githubusercontent.com/mxiaonian/ZiPingEightChar/main/VERSION"
 GITHUB_ZIPBALL_URL = "https://codeload.github.com/mxiaonian/ZiPingEightChar/zip/refs/heads/main"
+GITHUB_MANIFEST_URL = "https://raw.githubusercontent.com/mxiaonian/ZiPingEightChar/main/manifest.json"
 GITEA_VERSION_URL = "https://git.lingyaomiaojie.com/moxiaonian/ZiPingEightChar/raw/branch/main/VERSION"
 GITEA_ZIPBALL_URL = "https://git.lingyaomiaojie.com/moxiaonian/ZiPingEightChar/archive/main.zip"
+GITEA_MANIFEST_URL = "https://git.lingyaomiaojie.com/moxiaonian/ZiPingEightChar/raw/branch/main/manifest.json"
+
+# 更新签名信任锚：ed25519 公钥（32 字节，十六进制），作者 2026-10-10 生成。
+# 指纹 SHA256(公钥) = 3089bc1cc9a453e5be66a36574635da6b2ad9797c57af11164111faca157411c
+# 用途：--apply 校验 manifest.json.sig。私钥仅作者持有（~/.zipec/signing.key），
+# 不进任何仓库；公钥更换 = 信任锚更换，须随版本说明明确公告。
+UPDATE_PUBLIC_KEY_HEX = "49103c13cad0d9c67207945b4e4f6ff81d1261339eb0de4a60c2a1cf949d7852"
 
 CACHE_REL = "data/.update_check.json"
 CACHE_TTL_SECONDS = 24 * 3600
@@ -69,6 +91,14 @@ def _zipball_urls() -> list:
     if env:
         return [u.strip() for u in env.split(",") if u.strip()]
     return [GITHUB_ZIPBALL_URL, GITEA_ZIPBALL_URL]
+
+
+def _manifest_urls() -> list:
+    """双源交叉验证用：各源的 manifest.json 直链（.sig 直链 = 本地址 + '.sig'）。"""
+    env = os.environ.get("ZIPEC_MANIFEST_URLS")
+    if env:
+        return [u.strip() for u in env.split(",") if u.strip()]
+    return [GITHUB_MANIFEST_URL, GITEA_MANIFEST_URL]
 
 
 def _fetch_bytes(url: str, timeout: int) -> bytes:
@@ -288,8 +318,58 @@ def _verify_manifest(src: Path, files: dict):
     return errors
 
 
+def _cross_check_manifest(manifest_bytes: bytes):
+    """从全部配置源各拉一份 manifest.json，与 zip 内字节逐一比对。
+
+    返回 None = 各源与 zip 完全一致；否则返回错误信息（任一源不可达也
+    视为失败：无法交叉确认时宁可中止）。
+    """
+    urls = _manifest_urls()
+    if not urls:
+        return "未配置任何 manifest 源"
+    for url in urls:
+        try:
+            data = _fetch_bytes(url, NETWORK_TIMEOUT)
+        except Exception as e:
+            return f"{url} 不可达（{e}），无法完成双源交叉验证"
+        if data != manifest_bytes:
+            return f"{url} 的 manifest.json 与下载包内字节不一致，两源口径分歧"
+    return None
+
+
+def _load_manifest_sig(src: Path):
+    """优先取 zip 内 manifest.json.sig；缺失则按 manifest 源单独拉 .sig（curl 回退同路）。
+
+    返回签名文本（base64）或 None。
+    """
+    p = src / "manifest.json.sig"
+    if p.is_file():
+        try:
+            return p.read_text(encoding="utf-8")
+        except OSError:
+            return None
+    for url in _manifest_urls():
+        try:
+            return _fetch_text(url + ".sig")
+        except Exception:
+            continue
+    return None
+
+
+def _signature_valid(manifest_bytes: bytes, sig_text: str) -> bool:
+    try:
+        sig = base64.b64decode(sig_text.strip(), validate=True)
+    except Exception:
+        return False
+    try:
+        pk = bytes.fromhex(UPDATE_PUBLIC_KEY_HEX)
+    except ValueError:
+        return False
+    return _update_sig.verify(pk, manifest_bytes, sig)
+
+
 def _sync(root: Path, src: Path, files: dict) -> None:
-    managed = set(files) | {"manifest.json", "VERSION"}
+    managed = set(files) | {"manifest.json", "manifest.json.sig", "VERSION"}
     copied = deleted = 0
     for rel in sorted(managed - {"VERSION"}):  # VERSION 最后写
         s = src / rel
@@ -364,7 +444,32 @@ def cmd_apply(root: Path) -> int:
             print("失败：远端包内找不到 manifest.json（本地未改动）", file=sys.stderr)
             return 3
         try:
-            manifest = json.loads((src / "manifest.json").read_text(encoding="utf-8"))
+            manifest_bytes = (src / "manifest.json").read_bytes()
+        except OSError as e:
+            print(f"失败：manifest.json 读取异常（{e}）（本地未改动）", file=sys.stderr)
+            return 3
+
+        # 防线 1：双源交叉验证（各源 manifest 与 zip 内字节一致）
+        err = _cross_check_manifest(manifest_bytes)
+        if err:
+            print(f"失败：{err}，已中止（本地未改动）", file=sys.stderr)
+            return 3
+        print(f"双源交叉验证通过（{len(_manifest_urls())} 个源口径一致）")
+
+        # 防线 2：内置公钥验签 manifest（缺 sig 视同验签失败）
+        sig_text = _load_manifest_sig(src)
+        if sig_text is None:
+            print("失败：包未带 manifest.json.sig 签名，可能为旧版或被篡改，"
+                  "已中止（本地未改动）", file=sys.stderr)
+            return 3
+        if not _signature_valid(manifest_bytes, sig_text):
+            print("失败：manifest.json 签名校验不符，包可能被篡改，"
+                  "已中止（本地未改动）", file=sys.stderr)
+            return 3
+        print("manifest 签名校验通过")
+
+        try:
+            manifest = json.loads(manifest_bytes.decode("utf-8"))
             files = manifest["files"]
         except Exception as e:
             print(f"失败：manifest.json 无法解析（{e}）（本地未改动）", file=sys.stderr)

@@ -13,6 +13,7 @@ logo 与品牌字体（render/assets/）以 base64 内嵌，保证 HTML 单文�
 import base64
 import re
 from datetime import datetime
+from html import escape as _escape
 from pathlib import Path
 
 from chart.ganzhi import NAYIN, WX_GAN, WX_ZHI, gz_void, ten_god, terrain
@@ -31,6 +32,14 @@ _SEASON_LABEL = ("旺", "相", "休", "囚", "死")
 
 _ASSETS_DIR = Path(__file__).resolve().parent / "assets"
 _SHA_NOTE_RE = re.compile(r"[（(][^）)]*[）)]")
+
+# 结构性占位符：值本身是装配层渲染出的 HTML 片段或 base64 资源，
+# 填充时原样注入；其余占位符均为文本字段，一律 HTML 转义防注入。
+_STRUCTURAL_KEYS = frozenset({
+    "LOGO_B64", "FONT_B64", "QRCODE_B64",
+    "WARNINGS", "MAIN_TABLE", "LUCK_STRIP", "CHILDHOOD_BLOCK",
+    "FLOW_YEARS", "FLOW_MONTHS",
+})
 
 
 def _strip_sha_note(entry: str) -> str:
@@ -239,5 +248,8 @@ def build_html(chart) -> str:
     }
     out = tpl
     for k, v in mapping.items():
-        out = out.replace("{{" + k + "}}", str(v))
+        v = str(v)
+        if k not in _STRUCTURAL_KEYS:
+            v = _escape(v, quote=True)
+        out = out.replace("{{" + k + "}}", v)
     return out

@@ -10,7 +10,7 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL_ROOT / "scripts"))
 
 
-def _chart():
+def _chart(name="张三", place="四川省成都市"):
     """用真实排盘管线造一份 ChartData（成都 1990 男盘）。"""
     from datetime import datetime
     from astro.solar_time import to_true_solar_time
@@ -39,7 +39,7 @@ def _chart():
     years = [(y, gz, luck_label_for_year(y, decade))
              for y, gz in flow_years(cast_dt.year, this_year, 10)]
     return build_chart_data(
-        name="张三", gender="男", place="四川省成都市",
+        name=name, gender="男", place=place,
         clock="1990-05-14 08:30", loc=loc, tz_audit=tz_audit,
         st_audit=st_audit, bd_audit=bd_audit, raw=raw, luck=luck,
         luck_pillars=decade, flow_years=years,
@@ -170,6 +170,80 @@ class HtmlRenderTest(unittest.TestCase):
         self.assertIs(NAYIN, SHA_NAYIN)
         self.assertEqual(NAYIN["甲辰"], "覆灯火")
         self.assertEqual(NAYIN["丙午"], "天河水")
+
+
+class HtmlXssTest(unittest.TestCase):
+    """XSS 防护：用户可控字段（姓名/出生地）一律转义，模板带 CSP，无脚本。"""
+
+    PAYLOADS = (
+        "<script>alert(1)</script>",
+        "<img src=x onerror=alert(1)>",
+        '" autofocus onfocus=alert(1) x="',
+        "javascript:alert(1)",
+        '山西晋城 "><svg onload=alert(1)>',
+    )
+
+    # 活跃标签（真实 < 起首、未被 &lt; 转义）携带事件属性或 javascript: 协议
+    _LIVE_HANDLER = re.compile(r"<[a-zA-Z][^<>]*\son\w+\s*=")
+    _LIVE_JS_URL = re.compile(r"<[a-zA-Z][^<>]*javascript:")
+
+    def _render(self, name, place):
+        from render.html import build_html
+        return build_html(_chart(name=name, place=place))
+
+    def test_payloads_escaped(self):
+        """注入向量在输出中只以转义形态存在，裸形态消失。"""
+        from html import escape
+        for payload in self.PAYLOADS:
+            for field in ("name", "place"):
+                kw = {"name": "张三", "place": "四川省成都市", field: payload}
+                html = self._render(**kw)
+                esc = escape(payload, quote=True)
+                if esc != payload:  # 含 & < > " ' 的载荷：转义形态在、裸形态不在
+                    self.assertIn(esc, html, f"{field}={payload!r} 未转义")
+                    self.assertNotIn(payload, html, f"{field}={payload!r} 裸注入")
+
+    def test_no_live_markup_in_document(self):
+        """注入打到 name/place 后检查整份文档（含结构性占位符区域）：
+        无 <script> 标签、无活跃事件处理属性、无 javascript: 属性值。"""
+        html = self._render("<img src=x onerror=alert(1)>",
+                            '" autofocus onfocus=alert(1) x="')
+        self.assertNotIn("<script", html.lower())
+        self.assertIsNone(self._LIVE_HANDLER.search(html),
+                          "存在活跃 on* 事件处理属性")
+        self.assertIsNone(self._LIVE_JS_URL.search(html),
+                          "存在 javascript: 属性值")
+
+    def test_javascript_scheme_inert(self):
+        """javascript:alert(1) 无特殊字符、转义前后同形——只能作为纯文本出现。"""
+        html = self._render("javascript:alert(1)", "javascript:alert(1)")
+        self.assertIsNone(self._LIVE_JS_URL.search(html))
+
+    def test_csp_meta_present(self):
+        """CSP meta 存在且按模板实际资源类型收紧：default-src 'none'，
+        仅放行 data: 图片/字体与 inline 样式。"""
+        from render.html import build_html
+        html = build_html(_chart())
+        m = re.search(
+            r'<meta http-equiv="Content-Security-Policy" content="([^"]+)"', html)
+        self.assertIsNotNone(m, "缺少 CSP meta")
+        csp = m.group(1)
+        self.assertIn("default-src 'none'", csp)
+        self.assertIn("img-src data:", csp)
+        self.assertIn("style-src 'unsafe-inline'", csp)
+        self.assertIn("font-src data:", csp)
+
+    def test_no_script_tag(self):
+        """盘面为纯静态页：输出不含任何 <script>。"""
+        from render.html import build_html
+        self.assertNotIn("<script", build_html(_chart()).lower())
+
+    def test_structural_placeholders_intact(self):
+        """转义不误伤结构性占位符：表格/条带 HTML 片段原样保留。"""
+        html = self._render("<b>x</b>", '<i>y</i>')
+        self.assertIn('<table class="pan">', html)
+        self.assertIn('<div class="strip">', html)
+        self.assertIn('data:image/png;base64,', html)
 
 
 class CastHtmlE2ETest(unittest.TestCase):

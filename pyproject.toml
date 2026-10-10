@@ -1,6 +1,6 @@
 [project]
 name = "ZiPingEightChar"
-version = "3.6.0"
+version = "3.6.1"
 requires-python = ">=3.10"        # zoneinfo 需 3.9+，dataclass 语法需 3.10
 dependencies = [
     "tyme4py==1.5.0",             # 精确锁定：历表数据跨版本会变，锁版本 = 锁可复现性
