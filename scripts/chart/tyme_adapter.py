@@ -55,11 +55,27 @@ def _shen_sha(ganzhi: dict, gender: str) -> dict:
     }
 
 
-def cast(cast_dt: datetime, gender: str) -> dict:
-    """cast_dt：已完成子初换日调整的真太阳时（naive，北京时间语义）。"""
-    solar = SolarTime.from_ymd_hms(cast_dt.year, cast_dt.month, cast_dt.day,
-                                   cast_dt.hour, cast_dt.minute, cast_dt.second)
-    ec = solar.get_lunar_hour().get_eight_char()
+def cast(cast_dt: datetime, gender: str, sect: int = 1) -> dict:
+    """cast_dt：真太阳时（naive，北京时间语义）。
+
+    sect：日界流派。1=子初换日（tyme4py 默认 provider，晚子时 23:xx 日柱归次日）；
+    2=子正换日（LunarSect2，晚子时日柱算当天）。晚子时的换日由 provider
+    原生实现，调用方不得再对 cast_dt 预先滚日（否则双重换日）。
+    """
+    from tyme4py.eightchar.provider.impl import (
+        DefaultEightCharProvider, LunarSect2EightCharProvider,
+    )
+    from tyme4py.lunar import LunarHour
+
+    prev_provider = LunarHour.provider
+    LunarHour.provider = (LunarSect2EightCharProvider() if sect == 2
+                          else DefaultEightCharProvider())
+    try:
+        solar = SolarTime.from_ymd_hms(cast_dt.year, cast_dt.month, cast_dt.day,
+                                       cast_dt.hour, cast_dt.minute, cast_dt.second)
+        ec = solar.get_lunar_hour().get_eight_char()
+    finally:
+        LunarHour.provider = prev_provider
     pillars = {k: getattr(ec, f"get_{k}")() for k in _PILLARS}
     me = ec.get_day().get_heaven_stem()
 

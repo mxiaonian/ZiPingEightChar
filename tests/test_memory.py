@@ -131,7 +131,7 @@ class TestUpdateChart:
         r1 = run(SAVE, tmp_path, *WANZI)
         assert r1.returncode == 0, f"stderr:\n{r1.stderr}"
         path = Path(r1.stdout.strip())
-        assert "丙子庚子庚辰丙子" in path.name  # 默认子初换日盘
+        assert "丙子庚子己卯甲子" in path.name  # 默认子初换日盘（晚子时归次日）
 
         # 模拟核对后的回写 + 固定 created_at
         text = path.read_text(encoding="utf-8")
@@ -140,28 +140,28 @@ class TestUpdateChart:
                       text, count=1, flags=re.M)
         path.write_text(text, encoding="utf-8")
 
-        # 用户确认子正换日：重排替换盘面段，日柱/时柱变 → 改新主键名
+        # 用户确认子正换日：重排替换盘面段，日柱变（时柱同为晚子时起法，不变）→ 改新主键名
         r2 = run(SAVE, tmp_path, "--update-chart", str(path),
                  "--day-boundary", "子正")
         assert r2.returncode == 0, f"stderr:\n{r2.stderr}"
-        assert "日柱 庚辰→己卯" in r2.stderr and "时柱 丙子→甲子" in r2.stderr
+        assert "日柱 己卯→戊寅" in r2.stderr
         assert "待复核" in r2.stderr  # 变动柱影响条目提示复核
         new_path = Path(r2.stdout.strip())
         assert new_path != path and not path.exists()
-        assert "丙子庚子己卯甲子" in new_path.name
+        assert "丙子庚子戊寅甲子" in new_path.name
         assert list((tmp_path / "archives").glob("*.md")) == [new_path]
 
         text = new_path.read_text(encoding="utf-8")
         meta = read_meta(text)
-        assert meta["pillars"] == '["丙子", "庚子", "己卯", "甲子"]'
-        assert meta["day_master"] == "己"
+        assert meta["pillars"] == '["丙子", "庚子", "戊寅", "甲子"]'
+        assert meta["day_master"] == "戊"
         assert meta["created_at"] == "2000-01-01 00:00"  # 保留
         # 盘面段只剩新盘：日界审计与晚子时警示均为子正口径，无旧盘残留
         assert "- 日界规则：子正换日（真太阳时 00:00）" in text
         assert "已按「子正换日」定盘" in text
         assert text.count("# 命盘") == 1
         chart_section = text.split("## 盘面")[1].split("## 主要关注方向")[0]
-        assert "日柱：己卯" in chart_section and "日柱：庚辰" not in chart_section
+        assert "日柱：戊寅" in chart_section and "日柱：己卯" not in chart_section
         # 其余小节保留
         assert "- 【已核实】2016 年离乡赴厦门读大学。" in text
 

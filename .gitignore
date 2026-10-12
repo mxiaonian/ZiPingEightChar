@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+
+# 运行时本机状态：授权文件与自更新缓存一律不入库、不随 zipball 分发
+# （与 tools/build_manifest.py 的 EXCLUDED_FILES 保持一致；公众版须不带
+#   授权状态文件出货，否则下载者会拿到别人已签发/已耗尽的额度）
+data/.license.json
+data/.update_check.json

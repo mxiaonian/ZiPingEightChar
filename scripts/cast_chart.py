@@ -88,11 +88,13 @@ def main() -> int:
         # L0-d UTC → 真太阳时（经度修正 + 均时差）
         tst, st_audit = to_true_solar_time(utc, loc.lon)
 
-        # L0-e 子初换日：真太阳时 23:00–24:00 归入次日
-        day, bd_audit = resolve_calendar_day(tst)
+        # L0-e 日界审计：is_late_zi 警示与口径文案；换日本身由排盘层
+        # provider 口径实现（见 tyme_adapter.cast 的 sect 参数），此处不再滚日
+        _day, bd_audit = resolve_calendar_day(tst)
 
-        # 排盘时刻 = 换日后的日历日 + 真太阳时的时分秒
-        cast_dt = day.replace(hour=tst.hour, minute=tst.minute, second=tst.second)
+        # 排盘时刻 = 真太阳时原样（晚子时的日界归算交给 tyme4py provider，
+        # 预先滚日会造成双重换日）
+        cast_dt = tst
 
         # L1-a 排盘（tyme4py 唯一接触面）
         raw = cast(cast_dt, a.gender)

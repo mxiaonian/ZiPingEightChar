@@ -1774,12 +1774,12 @@
   "香港": {
     "lon": 114.17,
     "lat": 22.32,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "澳门": {
     "lon": 113.54,
     "lat": 22.2,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "北京市东城区": {
     "lon": 116.4125,
@@ -16024,132 +16024,132 @@
   "香港特别行政区中西区": {
     "lon": 114.1494,
     "lat": 22.2847,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区湾仔区": {
     "lon": 114.178,
     "lat": 22.2791,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区东区": {
     "lon": 114.2212,
     "lat": 22.2825,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区南区": {
     "lon": 114.155,
     "lat": 22.2486,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区油尖旺区": {
     "lon": 114.1684,
     "lat": 22.3145,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区深水埗区": {
     "lon": 114.1582,
     "lat": 22.3366,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区九龙城区": {
     "lon": 114.1879,
     "lat": 22.3153,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区黄大仙区": {
     "lon": 114.199,
     "lat": 22.3391,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区观塘区": {
     "lon": 114.2092,
     "lat": 22.3237,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区荃湾区": {
     "lon": 114.116,
     "lat": 22.371,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区屯门区": {
     "lon": 113.9717,
     "lat": 22.3968,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区元朗区": {
     "lon": 114.0274,
     "lat": 22.4442,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区北区": {
     "lon": 114.1423,
     "lat": 22.4988,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区大埔区": {
     "lon": 114.1668,
     "lat": 22.4484,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区西贡区": {
     "lon": 114.2598,
     "lat": 22.3171,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区沙田区": {
     "lon": 114.1905,
     "lat": 22.3823,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区葵青区": {
     "lon": 114.1343,
     "lat": 22.3666,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "香港特别行政区离岛区": {
     "lon": 113.9413,
     "lat": 22.2894,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Hong_Kong"
   },
   "澳门特别行政区花地玛堂区": {
     "lon": 113.5478,
     "lat": 22.2108,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "澳门特别行政区花王堂区": {
     "lon": 113.5439,
     "lat": 22.2021,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "澳门特别行政区望德堂区": {
     "lon": 113.5451,
     "lat": 22.1967,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "澳门特别行政区大堂区": {
     "lon": 113.5486,
     "lat": 22.1915,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "澳门特别行政区风顺堂区": {
     "lon": 113.5368,
     "lat": 22.1903,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "澳门特别行政区嘉模堂区": {
     "lon": 113.5536,
     "lat": 22.1567,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "澳门特别行政区路凼填海区": {
     "lon": 113.5645,
     "lat": 22.1396,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "澳门特别行政区圣方济各堂区": {
     "lon": 113.5549,
     "lat": 22.1264,
-    "tz": "Asia/Shanghai"
+    "tz": "Asia/Macau"
   },
   "_aliases": {
     "乌市": "乌鲁木齐",

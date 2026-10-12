@@ -17,6 +17,9 @@ SCRIPTS_DIR = SKILL_ROOT / "scripts"
 GOLDEN_DIR = Path(__file__).resolve().parent / "golden"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
+_VENDOR = SKILL_ROOT / "vendor"
+if str(_VENDOR) not in sys.path:
+    sys.path.insert(0, str(_VENDOR))
 
 from astro.day_boundary import resolve_calendar_day   # noqa: E402
 from astro.solar_time import to_true_solar_time       # noqa: E402
@@ -63,6 +66,40 @@ class LateZiGoldenTest(unittest.TestCase):
                 tst, _st_audit = to_true_solar_time(utc, loc.lon)
                 _day, flag = resolve_calendar_day(tst)
                 self.assertIs(flag["is_late_zi"], s["expect"]["is_late_zi"])
+
+
+class LateZiSectPillarsTest(unittest.TestCase):
+    """晚子时双滚回归：换日由 tyme4py provider 口径实现（sect 参数），
+    调用方不再预滚日。锚点：1973-08-23 23:32 真太阳时。
+    子初 → 壬辰日庚子时（滚一日）；子正 → 辛卯日庚子时（不滚，晚子时时柱仍次日起）。
+    """
+
+    def test_sect1_rolls_once(self):
+        from chart.tyme_adapter import cast
+        r = cast(datetime(1973, 8, 23, 23, 32), "男", sect=1)
+        self.assertEqual(r["day"]["gan"] + r["day"]["zhi"], "壬辰")
+        self.assertEqual(r["hour"]["gan"] + r["hour"]["zhi"], "庚子")
+
+    def test_sect2_no_roll(self):
+        from chart.tyme_adapter import cast
+        r = cast(datetime(1973, 8, 23, 23, 32), "男", sect=2)
+        self.assertEqual(r["day"]["gan"] + r["day"]["zhi"], "辛卯")
+        self.assertEqual(r["hour"]["gan"] + r["hour"]["zhi"], "庚子")
+
+    def test_provider_restored(self):
+        from chart.tyme_adapter import cast
+        from tyme4py.eightchar.provider.impl import DefaultEightCharProvider
+        from tyme4py.lunar import LunarHour
+        cast(datetime(1973, 8, 23, 23, 32), "男", sect=2)
+        self.assertIsInstance(LunarHour.provider, DefaultEightCharProvider)
+
+    def test_non_late_zi_unaffected(self):
+        from chart.tyme_adapter import cast
+        for sect in (1, 2):
+            with self.subTest(sect=sect):
+                r = cast(datetime(1973, 8, 23, 12, 0), "男", sect=sect)
+                self.assertEqual(r["day"]["gan"] + r["day"]["zhi"], "辛卯")
+                self.assertEqual(r["hour"]["gan"] + r["hour"]["zhi"], "甲午")
 
 
 if __name__ == "__main__":

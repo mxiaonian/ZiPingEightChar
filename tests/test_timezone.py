@@ -50,5 +50,36 @@ class HistoryTzGoldenTest(unittest.TestCase):
                     )
 
 
+class HkMoDstTest(unittest.TestCase):
+    """香港/澳门时区回归：1986–1991 中国大陆实行夏令时，港澳 1979 年后无；
+    cities.json 港澳条目必须为 Asia/Hong_Kong / Asia/Macau，不得随大陆拨快。"""
+
+    def test_hongkong_1987_no_dst(self):
+        loc = resolve_location("香港")
+        _utc, audit = to_utc(datetime(1987, 7, 5, 5, 0), loc)
+        self.assertEqual(loc.tz, "Asia/Hong_Kong")
+        self.assertIs(audit["is_dst"], False)
+
+    def test_macau_1987_no_dst(self):
+        loc = resolve_location("澳门")
+        _utc, audit = to_utc(datetime(1987, 7, 5, 5, 0), loc)
+        self.assertEqual(loc.tz, "Asia/Macau")
+        self.assertIs(audit["is_dst"], False)
+
+    def test_mainland_1987_dst_kept(self):
+        # 回归保护：大陆 1987 年夏令时仍应拨快
+        loc = resolve_location("北京")
+        _utc, audit = to_utc(datetime(1987, 7, 5, 5, 0), loc)
+        self.assertIs(audit["is_dst"], True)
+
+    def test_hongkong_1970_historical_dst(self):
+        # 香港 1949 后的历史夏令时（如 1970 年）应被 IANA 库正确处理
+        # （1949 前走民国五时区历史表分支，不在此断言范围）
+        loc = resolve_location("香港")
+        _utc, audit = to_utc(datetime(1970, 7, 15, 12, 0), loc)
+        self.assertEqual(audit["tz_used"], "Asia/Hong_Kong")
+        self.assertIs(audit["is_dst"], True)
+
+
 if __name__ == "__main__":
     unittest.main()

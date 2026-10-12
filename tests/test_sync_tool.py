@@ -1,7 +1,9 @@
 """外层 tools/sync_license_copy.py 的集成测试。
 
 sync/build/sign 工具留在授权方工作区外层 tools/，不随本仓库分发；
-副本或 clone 环境下 tools/ 不存在，整个模块 skip。
+副本或 clone 环境下 tools/ 不存在，整个模块 skip。注意 skipif 只跳过测试
+**执行**、挡不住模块导入，故下面的模块级 _load_module 也带同一存在性守卫，
+否则副本里 `pytest tests/` 会在收集阶段就 FileNotFoundError 并中断全套测试。
 
 测试用微型假母版（monkeypatch 替换模块 SRC）同步进临时授权副本，
 不碰真实母版与真实副本；签名用测试私钥，UPDATE_PUBLIC_KEY_HEX 同步造假。
@@ -18,10 +20,12 @@ ROOT = Path(__file__).resolve().parents[1]
 TOOLS = ROOT.parent / "tools"
 SYNC_TOOL = TOOLS / "sync_license_copy.py"
 
+_HAS_TOOLS = (SYNC_TOOL.is_file()
+              and (TOOLS / "build_manifest.py").is_file()
+              and (TOOLS / "sign_manifest.py").is_file())
+
 pytestmark = pytest.mark.skipif(
-    not (SYNC_TOOL.is_file()
-         and (TOOLS / "build_manifest.py").is_file()
-         and (TOOLS / "sign_manifest.py").is_file()),
+    not _HAS_TOOLS,
     reason="外层 tools/ 不随仓库分发，本环境无同步工具",
 )
 
@@ -41,8 +45,10 @@ def _load_module(name: str, path: Path):
     return mod
 
 
-sync_tool = _load_module("sync_license_copy", SYNC_TOOL)
-build_manifest = _load_module("build_manifest", TOOLS / "build_manifest.py")
+# 无 tools/ 时置 None：本模块所有测试已被 skipif 跳过，不会触达这两个名字
+sync_tool = _load_module("sync_license_copy", SYNC_TOOL) if _HAS_TOOLS else None
+build_manifest = (_load_module("build_manifest", TOOLS / "build_manifest.py")
+                  if _HAS_TOOLS else None)
 
 
 def _make_master(src: Path, pk_hex: str) -> None:

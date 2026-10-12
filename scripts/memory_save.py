@@ -85,13 +85,14 @@ def _cast_chart(name: str, gender: str, birth: str, place: str,
     # L0-d UTC → 真太阳时（经度修正 + 均时差）
     tst, st_audit = to_true_solar_time(utc, loc.lon)
 
-    # L0-e 日界归算：默认子初换日（真太阳时 23:00–24:00 归入次日）
-    day, bd_audit = resolve_calendar_day(tst, rule=day_boundary)
+    # L0-e 日界审计：is_late_zi 警示与口径文案；换日由排盘层 provider
+    # 口径实现（sect 参数），此处不再对时刻预先滚日（避免双重换日）
+    _day, bd_audit = resolve_calendar_day(tst, rule=day_boundary)
 
-    cast_dt = day.replace(hour=tst.hour, minute=tst.minute, second=tst.second)
+    cast_dt = tst
 
-    # L1-a 排盘（tyme4py 唯一接触面）
-    raw = cast(cast_dt, gender)
+    # L1-a 排盘（tyme4py 唯一接触面）；子正口径走 sect=2（晚子时日柱算当天）
+    raw = cast(cast_dt, gender, sect=2 if day_boundary == "子正" else 1)
 
     # L1-b 起运、大运、流年、流月、小运
     forward = is_forward(gender, raw["year"]["gan"])
