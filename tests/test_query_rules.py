@@ -1,8 +1,8 @@
 """规则条款检索（scripts/query_rules.py）：索引完整性、关键词命中、
 多关键词排序、--id 精确取、--list、退出码。
 
-索引规模基准：rules/[0-9]*.md 共 20 个文件、548 条 `### R-XX-NN` 条款
-（2026-10 核，与 grep -c '^### R-' 对拍）。
+索引规模基准：rules/[0-9]*.md 共 20 个文件、568 条 `### R-XX-NN` 条款
+（2026-10-13 复核，与 grep -c '^### R-' 对拍）。
 """
 import re
 import sys
@@ -20,8 +20,8 @@ BY_ID = {c.rid: c for c in CLAUSES}
 
 
 class TestIndexCompleteness:
-    def test_clause_count_548(self):
-        assert len(CLAUSES) == 548
+    def test_clause_count_568(self):
+        assert len(CLAUSES) == 568
 
     def test_ids_unique(self):
         assert len(BY_ID) == len(CLAUSES)
@@ -117,8 +117,8 @@ class TestMainCLI:
     def test_list(self, capsys):
         assert qr.main(["--list"]) == 0
         out = capsys.readouterr().out
-        assert "（548 条）" in out
-        assert len(re.findall(r"^- R-\S+　", out, re.M)) == 548
+        assert "（568 条）" in out
+        assert len(re.findall(r"^- R-\S+　", out, re.M)) == 568
 
     def test_limit(self, capsys):
         assert qr.main(["冲", "--limit", "2"]) == 0

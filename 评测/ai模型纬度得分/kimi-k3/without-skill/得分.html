@@ -92,7 +92,11 @@
   .delta.up { color: #2e7d32; }
   .delta.down { color: #c62828; }
 
-  /* 维度条形 */
+  /* 两大区块卡片：顶部强调线 + 编号徽章，与头部信息卡明确分开 */
+  .card.block { border-top: 3px solid var(--accent); }
+  .sectno { color: var(--accent); margin-right: 6px; }
+
+  /* 维度/年度条形 */
   .sect { font-size: 15px; font-weight: 700; margin: 2px 0 10px;
           font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
   .sect .note { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
@@ -114,14 +118,12 @@
             white-space: nowrap; }
   .dimval b { color: var(--ink); font-size: 13.5px; }
 
-  /* 分届表 */
-  table.contest { width: 100%; border-collapse: collapse; }
-  .contest th, .contest td {
-    border: 1px solid var(--card-line); text-align: center;
-    padding: 7px 4px; font-size: 13.5px;
-  }
-  .contest th { background: rgba(193, 188, 235, .18); color: var(--soft); font-weight: 600; }
-  .contest td.dim { text-align: left; padding-left: 12px; }
+  /* 分年度柱状条（行结构与维度条一致，名称/数值列更宽） */
+  .yrname { width: 64px; text-align: right; font-size: 13px; color: var(--soft);
+            flex: none; }
+  .yrval { width: 252px; flex: none; font-size: 12px; color: var(--soft);
+           white-space: nowrap; }
+  .yrval b { color: var(--ink); font-size: 13.5px; }
 
   .foot {
     margin-top: 14px; padding-top: 10px; font-size: 12px; color: var(--muted);
@@ -164,8 +166,18 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="sect">分维度准确率<span class="note">九维度，条下灰线为官方基线</span></div>
+    <div class="card block">
+      <div class="sect"><span class="sectno">①</span>分年度准确率<span class="note">五届 × 40 题，条下灰线为官方分届基线</span></div>
+      <div class="legend"><i class="ours"></i>本次评测 <i class="base"></i>官方基线</div>
+      <div class="dimrow"><div class="yrname">2021 届</div><div class="dimtrack"><div class="bar ours" style="width:42.5%"></div><div class="bar base" style="width:27.5%"></div></div><div class="yrval"><b>42.5%</b>（17/40） <span style="color:var(--muted)">基线 27.5%</span> <span class="delta up">+15.0pp</span></div></div>
+      <div class="dimrow"><div class="yrname">2022 届</div><div class="dimtrack"><div class="bar ours" style="width:50.0%"></div><div class="bar base" style="width:40.0%"></div></div><div class="yrval"><b>50.0%</b>（20/40） <span style="color:var(--muted)">基线 40.0%</span> <span class="delta up">+10.0pp</span></div></div>
+      <div class="dimrow"><div class="yrname">2023 届</div><div class="dimtrack"><div class="bar ours" style="width:30.0%"></div><div class="bar base" style="width:27.5%"></div></div><div class="yrval"><b>30.0%</b>（12/40） <span style="color:var(--muted)">基线 27.5%</span> <span class="delta up">+2.5pp</span></div></div>
+      <div class="dimrow"><div class="yrname">2024 届</div><div class="dimtrack"><div class="bar ours" style="width:42.5%"></div><div class="bar base" style="width:35.0%"></div></div><div class="yrval"><b>42.5%</b>（17/40） <span style="color:var(--muted)">基线 35.0%</span> <span class="delta up">+7.5pp</span></div></div>
+      <div class="dimrow"><div class="yrname">2025 届</div><div class="dimtrack"><div class="bar ours" style="width:40.0%"></div><div class="bar base" style="width:42.5%"></div></div><div class="yrval"><b>40.0%</b>（16/40） <span style="color:var(--muted)">基线 42.5%</span> <span class="delta down">-2.5pp</span></div></div>
+    </div>
+
+    <div class="card block">
+      <div class="sect"><span class="sectno">②</span>分维度准确率<span class="note">九维度，条下灰线为官方分维度基线</span></div>
       <div class="legend"><i class="ours"></i>本次评测 <i class="base"></i>官方基线</div>
       <div class="dimrow"><div class="dimname">流年运势</div><div class="dimtrack"><div class="bar ours" style="width:37.8%"></div><div class="bar base" style="width:40.5%"></div></div><div class="dimval"><b>37.8%</b>（14/37） <span style="color:var(--muted)">基线 40.5%</span></div></div>
       <div class="dimrow"><div class="dimname">感情</div><div class="dimtrack"><div class="bar ours" style="width:34.7%"></div><div class="bar base" style="width:36.7%"></div></div><div class="dimval"><b>34.7%</b>（17/49） <span style="color:var(--muted)">基线 36.7%</span></div></div>
@@ -176,18 +188,6 @@
       <div class="dimrow"><div class="dimname">财富</div><div class="dimtrack"><div class="bar ours" style="width:46.2%"></div><div class="bar base" style="width:30.8%"></div></div><div class="dimval"><b>46.2%</b>（6/13） <span style="color:var(--muted)">基线 30.8%</span></div></div>
       <div class="dimrow"><div class="dimname">健康</div><div class="dimtrack"><div class="bar ours" style="width:46.2%"></div><div class="bar base" style="width:23.1%"></div></div><div class="dimval"><b>46.2%</b>（6/13） <span style="color:var(--muted)">基线 23.1%</span></div></div>
       <div class="dimrow"><div class="dimname">其他</div><div class="dimtrack"><div class="bar ours" style="width:100.0%"></div><div class="bar base" style="width:50.0%"></div></div><div class="dimval"><b>100.0%</b>（2/2） <span style="color:var(--muted)">基线 50.0%</span></div></div>
-    </div>
-
-    <div class="card">
-      <div class="sect">分届准确率</div>
-      <table class="contest">
-        <tr><th>届别</th><th>本次</th><th>官方基线</th><th>差值</th></tr>
-        <tr><td class="dim">contest8_2021</td><td><b>42.5%</b>（17/40，未答 0）</td><td>27.5%</td><td><span class="delta up">+15.0pp</span></td></tr>
-        <tr><td class="dim">contest8_2022</td><td><b>50.0%</b>（20/40，未答 0）</td><td>40.0%</td><td><span class="delta up">+10.0pp</span></td></tr>
-        <tr><td class="dim">contest8_2023</td><td><b>30.0%</b>（12/40，未答 0）</td><td>27.5%</td><td><span class="delta up">+2.5pp</span></td></tr>
-        <tr><td class="dim">contest8_2024</td><td><b>42.5%</b>（17/40，未答 0）</td><td>35.0%</td><td><span class="delta up">+7.5pp</span></td></tr>
-        <tr><td class="dim">contest8_2025</td><td><b>40.0%</b>（16/40，未答 0）</td><td>42.5%</td><td><span class="delta down">-2.5pp</span></td></tr>
-      </table>
       <div class="foot">
         数据源：得分.json ・ 渲染：评测/工具/render_scorecard.py<br>
         盲测纪律与复测方法见 评测/README.md 与 评测/测试规则.md。

@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import re
 import sys
 from html import escape
 from pathlib import Path
@@ -36,7 +37,7 @@ DIM_ORDER = ["流年运势", "感情", "六亲", "事业", "性格", "学业", "
 
 # 结构性占位符：值是装配层渲染的 HTML 片段或 base64 资源，填充时原样注入；
 # 其余占位符均为文本字段，一律 HTML 转义防注入（与盘面图装配层同口径）。
-STRUCTURAL = {"LOGO_B64", "FONT_B64", "DIM_BARS", "CONTEST_ROWS"}
+STRUCTURAL = {"LOGO_B64", "FONT_B64", "DIM_BARS", "CONTEST_BARS"}
 
 
 def asset_b64(assets: Path, name: str) -> str:
@@ -66,26 +67,27 @@ def dim_bars(score: dict) -> str:
     return "\n      ".join(rows)
 
 
-def contest_rows(score: dict) -> str:
+def contest_bars(score: dict) -> str:
     rows = []
     base = score["baseline"].get("per_contest", {})
     for c in sorted(score["per_contest"]):
         s = score["per_contest"][c]
         b = base.get(c)
+        label = escape(re.sub(r"^contest\d+_", "", c) + " 届")
+        ours = f'<div class="bar ours" style="width:{s["accuracy"]}%"></div>'
+        ours += (f'<div class="bar base" style="width:{b}%"></div>'
+                 if isinstance(b, (int, float)) else "")
+        val = f'<b>{s["accuracy"]}%</b>（{s["correct"]}/{s["total"]}）'
         if isinstance(b, (int, float)):
             diff = round(s["accuracy"] - b, 1)
             cls = "up" if diff >= 0 else "down"
-            delta = (f'<span class="delta {cls}">{"+" if diff >= 0 else ""}'
-                     f'{diff}pp</span>')
-            btxt = f"{b}%"
-        else:
-            delta, btxt = "—", "—"
-        rows.append(
-            f'<tr><td class="dim">{escape(c)}</td>'
-            f'<td><b>{s["accuracy"]}%</b>（{s["correct"]}/{s["total"]}，'
-            f'未答 {s.get("no_answer", 0)}）</td>'
-            f'<td>{btxt}</td><td>{delta}</td></tr>')
-    return "\n        ".join(rows)
+            val += (f' <span style="color:var(--muted)">基线 {b}%</span>'
+                    f' <span class="delta {cls}">'
+                    f'{"+" if diff >= 0 else ""}{diff}pp</span>')
+        rows.append(f'<div class="dimrow"><div class="yrname">{label}</div>'
+                    f'<div class="dimtrack">{ours}</div>'
+                    f'<div class="yrval">{val}</div></div>')
+    return "\n      ".join(rows)
 
 
 def render(score: dict, template: str, assets: Path, score_json_name: str) -> str:
@@ -111,7 +113,7 @@ def render(score: dict, template: str, assets: Path, score_json_name: str) -> st
         "DELTA_CLASS": "up" if delta >= 0 else "down",
         "DELTA_TEXT": f'（{"+" if delta >= 0 else ""}{delta}pp）',
         "DIM_BARS": dim_bars(score),
-        "CONTEST_ROWS": contest_rows(score),
+        "CONTEST_BARS": contest_bars(score),
         "SCORE_JSON": score_json_name,
     }
     out = template
