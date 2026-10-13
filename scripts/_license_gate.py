@@ -18,11 +18,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import secrets
 from datetime import date
 from pathlib import Path
 
 _ENABLED = True  # 软锁总开关：False = 完全放行
+
+# 评测豁免：环境变量 ZIPEC_EVAL=1 时 check/consume 直接放行——
+# 跑测试集复测不签发、不扣次、不创建任何文件（见 评测/测试规则.md）。
+_EVAL_ENV = "ZIPEC_EVAL"
 
 _SALT = "lingyao-miaojie-ziping-eightchar"
 _COMPANY = "四川灵爻妙解文化传播有限公司"
@@ -78,6 +83,8 @@ def check(root: Path) -> str | None:
     """返回 None 表示放行；返回字符串表示拒跑原因（由调用方打印到 stderr，退出码 4）。"""
     if not _ENABLED:
         return None
+    if os.environ.get(_EVAL_ENV) == "1":
+        return None  # 评测豁免：不签发、不扣次、不创建任何文件
     st = _load(root)
     if st is None:
         if (root / PUBLIC_MARKER_REL).is_file():
@@ -101,6 +108,8 @@ def consume(root: Path) -> None:
     """成功排盘一次后扣减一次。仅在 check 放行后调用。"""
     if not _ENABLED:
         return
+    if os.environ.get(_EVAL_ENV) == "1":
+        return  # 评测豁免：不扣次、不写状态文件
     st = _load(root)
     if st is None:
         return

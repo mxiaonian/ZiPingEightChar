@@ -13,8 +13,8 @@ sys.path.insert(0, str(SCRIPTS))
 import _runtime_guard as guard
 
 ENTRY_SCRIPTS = ("cast_chart.py", "chart_shot.py", "memory_lookup.py",
-                 "memory_save.py", "query_shensha.py", "self_update.py",
-                 "share_export.py", "share_push.py")
+                 "memory_save.py", "query_rules.py", "query_shensha.py",
+                 "self_update.py", "share_export.py", "share_push.py")
 
 
 def run_with_fake_py39(code: str) -> subprocess.CompletedProcess:

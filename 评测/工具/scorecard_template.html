@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'">
+<title>{{TITLE}}</title>
+<style>
+  @font-face {
+    font-family: 'LogoFont';
+    src: url("data:font/ttf;base64,{{FONT_B64}}") format("truetype");
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
+  :root {
+    /* 灵爻妙解网站浅色主题（与盘面图同一套 root.css :root.light 变量） */
+    --ink: #222831;
+    --muted: rgba(27, 27, 27, .52);
+    --soft: rgba(27, 27, 27, .68);
+    --line: rgba(193, 188, 235, .55);
+    --card-line: rgba(193, 188, 235, .45);
+    --accent: #dc7b28;
+    --accent-2: #f97316;
+    --base-grey: #b9b3d9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 24px 32px; color: var(--ink);
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(ellipse 72% 58% at 78% 20%, rgba(150, 125, 245, .18), transparent 68%),
+      radial-gradient(ellipse 66% 48% at 20% 18%, rgba(112, 174, 255, .18), transparent 70%),
+      radial-gradient(ellipse 82% 52% at 52% 92%, rgba(84, 210, 200, .11), transparent 72%),
+      linear-gradient(135deg, #fbfcff 0%, #f5f8ff 42%, #f2edff 100%);
+    background-attachment: fixed;
+  }
+  .page { max-width: 900px; margin: 0 auto; }
+
+  /* 顶部品牌区：与盘面图一致的居中品牌头 */
+  .brand-head {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; margin: 2px 0 20px;
+  }
+  .brand-logo { width: 52px; height: 52px; display: block; }
+  .brand-name {
+    font-family: 'LogoFont', 'Kaiti SC', 'STKaiti', 'KaiTi', serif;
+    font-weight: 500; font-size: 30px; line-height: 1.25;
+    color: var(--ink); letter-spacing: 1px;
+  }
+  .brand-slogan {
+    margin-top: 3px; font-size: 11px; letter-spacing: 3.5px;
+    color: var(--muted);
+  }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(250, 252, 255, 1));
+    box-shadow: 0 16px 38px rgba(48, 56, 96, .12);
+    padding: 16px;
+  }
+  .card {
+    background: #fff; border: 1px solid var(--card-line);
+    border-radius: 8px; padding: 16px 18px; margin-bottom: 14px;
+    box-shadow: 0 2px 8px rgba(48, 56, 96, .05);
+  }
+  .card:last-child { margin-bottom: 0; }
+
+  /* 头部信息 */
+  .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .title {
+    font-size: 24px; font-weight: 700;
+    font-family: "Kaiti SC", "STKaiti", "KaiTi", serif;
+  }
+  .chip {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    border: 1px solid var(--accent); color: var(--accent); font-size: 13px;
+  }
+  .chip.grey { border-color: var(--base-grey); color: var(--soft); }
+  .meta { color: var(--muted); font-size: 13px; line-height: 1.9; margin-top: 6px; }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  /* 大数字 */
+  .hero { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; }
+  .big {
+    font-size: 64px; font-weight: 700; line-height: 1;
+    font-family: "Kaiti SC", "STKaiti", "KaiTi", serif;
+    color: var(--accent);
+  }
+  .big small { font-size: 26px; color: var(--accent-2); }
+  .hero .sub { font-size: 14px; color: var(--soft); line-height: 1.9; padding-bottom: 6px; }
+  .delta { font-weight: 700; }
+  .delta.up { color: #2e7d32; }
+  .delta.down { color: #c62828; }
+
+  /* 维度条形 */
+  .sect { font-size: 15px; font-weight: 700; margin: 2px 0 10px;
+          font-family: "Kaiti SC", "STKaiti", "KaiTi", serif; }
+  .sect .note { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .legend { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+  .legend i {
+    display: inline-block; width: 22px; height: 8px; border-radius: 4px;
+    vertical-align: middle; margin: 0 5px 1px 12px;
+  }
+  .legend i.ours { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .legend i.base { background: var(--base-grey); }
+  .dimrow { display: flex; align-items: center; gap: 10px; margin: 7px 0; }
+  .dimname { width: 64px; text-align: right; font-size: 13px; color: var(--soft);
+             flex: none; }
+  .dimtrack { flex: 1; }
+  .bar { height: 10px; border-radius: 5px; }
+  .bar.ours { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+  .bar.base { background: var(--base-grey); height: 4px; margin-top: 3px; opacity: .8; }
+  .dimval { width: 176px; flex: none; font-size: 12px; color: var(--soft);
+            white-space: nowrap; }
+  .dimval b { color: var(--ink); font-size: 13.5px; }
+
+  /* 分届表 */
+  table.contest { width: 100%; border-collapse: collapse; }
+  .contest th, .contest td {
+    border: 1px solid var(--card-line); text-align: center;
+    padding: 7px 4px; font-size: 13.5px;
+  }
+  .contest th { background: rgba(193, 188, 235, .18); color: var(--soft); font-weight: 600; }
+  .contest td.dim { text-align: left; padding-left: 12px; }
+
+  .foot {
+    margin-top: 14px; padding-top: 10px; font-size: 12px; color: var(--muted);
+    border-top: 1px dashed var(--card-line); line-height: 1.9;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="brand-head">
+    <img class="brand-logo" src="data:image/png;base64,{{LOGO_B64}}" alt="灵爻妙解">
+    <div>
+      <div class="brand-name">灵爻妙解</div>
+      <div class="brand-slogan">传承易学智慧</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="card">
+      <div class="head">
+        <span class="title">AI 评测记分卡</span>
+        <span class="chip">{{MODEL}}</span>
+        <span class="chip">{{SKILL_MODE_LABEL}}</span>
+        <span class="chip grey">{{BENCHMARK}}</span>
+      </div>
+      <div class="meta">
+        技能版本 <b>{{SKILL_VERSION}}</b> ・ 评测日期 <b>{{EVAL_DATE}}</b> ・
+        判分 <b>run_eval.py 脚本判分</b>（非模型裁判）
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hero">
+        <div class="big">{{OVERALL_ACC}}<small>%</small></div>
+        <div class="sub">
+          总体准确率 <b>{{OVERALL_CORRECT}}/{{OVERALL_TOTAL}}</b>（未答 {{NO_ANSWER}}）<br>
+          {{BASELINE_NAME}} {{BASELINE_ACC}}%
+          <span class="delta {{DELTA_CLASS}}">{{DELTA_TEXT}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sect">分维度准确率<span class="note">九维度，条下灰线为官方基线</span></div>
+      <div class="legend"><i class="ours"></i>本次评测 <i class="base"></i>官方基线</div>
+      {{DIM_BARS}}
+    </div>
+
+    <div class="card">
+      <div class="sect">分届准确率</div>
+      <table class="contest">
+        <tr><th>届别</th><th>本次</th><th>官方基线</th><th>差值</th></tr>
+        {{CONTEST_ROWS}}
+      </table>
+      <div class="foot">
+        数据源：{{SCORE_JSON}} ・ 渲染：评测/工具/render_scorecard.py<br>
+        盲测纪律与复测方法见 评测/README.md 与 评测/测试规则.md。
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

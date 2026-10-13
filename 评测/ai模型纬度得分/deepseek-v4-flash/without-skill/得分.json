@@ -1,0 +1,48 @@
+{
+  "model": "deepseek-v4-flash",
+  "skill_mode": "without-skill",
+  "skill_version": "3.6.2",
+  "eval_date": "2026-10-13",
+  "benchmark": "BaziQA-全球算命师大赛",
+  "overall": {"total": 200, "correct": 71, "accuracy": 35.5, "no_answer": 0},
+  "baseline": {
+    "name": "官方基线（Gemini）",
+    "overall": {"total": 200, "correct": 69, "accuracy": 34.5},
+    "per_contest": {
+      "contest8_2021": 27.5,
+      "contest8_2022": 40.0,
+      "contest8_2023": 27.5,
+      "contest8_2024": 35.0,
+      "contest8_2025": 42.5
+    },
+    "per_dimension": {
+      "流年运势": 40.5,
+      "感情": 36.7,
+      "六亲": 27.6,
+      "事业": 24.0,
+      "性格": 45.0,
+      "学业": 41.7,
+      "财富": 30.8,
+      "健康": 23.1,
+      "其他": 50.0
+    }
+  },
+  "per_contest": {
+    "contest8_2021": {"total": 40, "correct": 17, "accuracy": 42.5, "no_answer": 0},
+    "contest8_2022": {"total": 40, "correct": 18, "accuracy": 45.0, "no_answer": 0},
+    "contest8_2023": {"total": 40, "correct": 6, "accuracy": 15.0, "no_answer": 0},
+    "contest8_2024": {"total": 40, "correct": 19, "accuracy": 47.5, "no_answer": 0},
+    "contest8_2025": {"total": 40, "correct": 11, "accuracy": 27.5, "no_answer": 0}
+  },
+  "per_dimension": {
+    "流年运势": {"total": 37, "correct": 11, "accuracy": 29.7, "no_answer": 0},
+    "感情": {"total": 49, "correct": 13, "accuracy": 26.5, "no_answer": 0},
+    "六亲": {"total": 29, "correct": 12, "accuracy": 41.4, "no_answer": 0},
+    "事业": {"total": 25, "correct": 10, "accuracy": 40.0, "no_answer": 0},
+    "性格": {"total": 20, "correct": 11, "accuracy": 55.0, "no_answer": 0},
+    "学业": {"total": 12, "correct": 5, "accuracy": 41.7, "no_answer": 0},
+    "财富": {"total": 13, "correct": 3, "accuracy": 23.1, "no_answer": 0},
+    "健康": {"total": 13, "correct": 5, "accuracy": 38.5, "no_answer": 0},
+    "其他": {"total": 2, "correct": 1, "accuracy": 50.0, "no_answer": 0}
+  }
+}

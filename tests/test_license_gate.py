@@ -10,6 +10,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import _license_gate as gate
 
 
+@pytest.fixture(autouse=True)
+def _no_eval_env(monkeypatch):
+    """默认清掉评测豁免变量，保证既有用例覆盖的是未豁免口径。"""
+    monkeypatch.delenv("ZIPEC_EVAL", raising=False)
+
+
 @pytest.fixture
 def root(tmp_path):
     return tmp_path
@@ -161,3 +167,45 @@ class TestGrantUses:
         st = json.loads((root / "data" / ".license.json").read_text("utf-8"))
         assert st["remaining_uses"] == 12
         assert gate.check(root) is None
+
+
+class TestEvalExemption:
+    """ZIPEC_EVAL=1：评测复测豁免——直接放行，不签发、不扣次、不创建任何文件。"""
+
+    def test_no_license_passes_and_creates_nothing(self, root, monkeypatch):
+        monkeypatch.setenv("ZIPEC_EVAL", "1")
+        assert gate.check(root) is None
+        gate.consume(root)
+        assert not (root / "data").exists()
+
+    def test_public_marker_not_issued(self, root, monkeypatch):
+        make_public_marker(root)
+        monkeypatch.setenv("ZIPEC_EVAL", "1")
+        assert gate.check(root) is None
+        assert not (root / "data" / ".license.json").exists()  # 不就地签发
+
+    def test_licensed_copy_not_decremented(self, root, monkeypatch):
+        make_state(root)
+        before = (root / "data" / ".license.json").read_text("utf-8")
+        monkeypatch.setenv("ZIPEC_EVAL", "1")
+        assert gate.check(root) is None
+        gate.consume(root)
+        st = json.loads((root / "data" / ".license.json").read_text("utf-8"))
+        assert st["remaining_uses"] == 2  # 不扣次
+        assert (root / "data" / ".license.json").read_text("utf-8") == before
+
+    def test_exhausted_copy_passes_under_eval(self, root, monkeypatch):
+        make_state(root, max_uses=0)
+        monkeypatch.setenv("ZIPEC_EVAL", "1")
+        assert gate.check(root) is None
+
+    def test_env_unset_keeps_original_behavior(self, root, monkeypatch):
+        monkeypatch.setenv("ZIPEC_EVAL", "0")  # 仅认 "1"，其他值不豁免
+        make_public_marker(root)
+        assert gate.check(root) is None
+        assert (root / "data" / ".license.json").exists()  # 公众版仍首启签发
+
+    def test_env_unset_exhausted_copy_still_denied(self, root, monkeypatch):
+        monkeypatch.setenv("ZIPEC_EVAL", "0")
+        make_state(root, max_uses=0)
+        assert "次数已用尽" in gate.check(root)
